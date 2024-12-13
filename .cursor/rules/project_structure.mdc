@@ -1,0 +1,40 @@
+---
+description: OpenAPI Go Generator project structure and overview
+globs: *.go,*.yml,*.md
+alwaysApply: false
+---
+
+# OpenAPI Go Generator
+
+This project automates the process of fetching OpenAPI specifications and generating Go client code from them. It uses the ogen tool to generate Go clients from OpenAPI specs and applies custom post-processing to add internal client functionality.
+
+## Project Structure
+
+- `main.go` - Entry point for the CLI tool
+- `internal/` - Core implementation
+  - `processor/` - Handles finding and processing OpenAPI specs
+  - `postprocess/` - Adds custom functionality to generated clients
+- `generated/` - Output directory for generated clients
+- `example/` - Example usage of generated clients
+- `external/` - Contains submodules with OpenAPI specs
+- `ogen.yml` - Configuration for the ogen generator
+
+## Key Concepts
+
+1. **OpenAPI Processing**: The tool finds OpenAPI specs in a specified directory and generates Go clients using ogen.
+2. **Internal Clients**: The post-processing adds `NewInternalClient` functions to all generated clients, allowing internal services to use the clients without requiring authentication.
+3. **Filtering**: External endpoints (paths starting with `/external`) are filtered out, keeping only internal endpoints.
+
+## Environment Variables
+
+- `SPECS_DIR` - Directory containing OpenAPI specs (default: `./external/sdk/sdk-packages`)
+- `OUTPUT_DIR` - Output directory for generated clients (default: `./generated`)
+- `TARGET_SERVICES` - Regex pattern to filter services (default: `(funding-server-sdk|holidays-server-sdk|customer-data-sdk)`)
+
+## Task Commands
+
+Use the task runner to execute common operations:
+- `task generate-clients` - Generate clients from OpenAPI specs
+- `task process-specs` - Process OpenAPI specs and run go mod tidy
+- `task` (default) - Run the full process
+- `task ci` - Run the full CI pipeline including commit 

@@ -1,0 +1,42 @@
+stages:
+  - update
+
+variables:
+  GOLANG_VERSION: "1.24"
+
+update-sdk:
+  stage: update
+  image: golang:$GOLANG_VERSION
+  before_script:
+    - apk add --no-cache git task
+  script:
+    - task generate
+    - |
+      # Enable strict error handling
+      set -e
+      
+      # Stage all changes in the generated directory
+      git add generated/
+      
+      # Check if there are staged changes to commit
+      if [[ -n "$(git diff --cached --name-only)" ]]; then
+        # Commit with informative message
+        git commit -m "chore: update generated clients from OpenAPI specs"
+        
+        # Pull with rebase to avoid conflicts
+        git pull --rebase origin ${CI_COMMIT_REF_NAME} > /dev/null
+        
+        # Push changes using CI token authentication
+        git push "https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_REPOSITORY_URL#*@}" "HEAD:${CI_COMMIT_REF_NAME}"
+        
+        echo "Changes committed and pushed successfully"
+      else
+        echo "No changes to commit"
+      fi
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+      when: always
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+      when: manual
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: manual

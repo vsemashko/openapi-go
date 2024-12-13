@@ -1,0 +1,66 @@
+---
+description: Configuration for the ogen OpenAPI generator
+globs: ogen.yml
+alwaysApply: false
+---
+
+# Ogen Configuration
+
+The `ogen.yml` file configures the ogen OpenAPI generator, which is used to generate Go client code from OpenAPI specifications.
+
+## Generator Features
+
+The generator is configured with the following features:
+
+- `paths/client` - Enables paths client generation
+- `client/request/validation` - Enables validation of client requests
+- `debug/example_tests` - Enables generation of example tests
+
+Other features are disabled with `disable_all: true`.
+
+## Path Filtering
+
+The generator is configured to include all paths with `path_regex: ".*"`. Path filtering is handled manually in the processor module.
+
+## HTTP Methods
+
+The generator is configured to include the following HTTP methods:
+- GET
+- POST
+- PUT
+- PATCH
+- DELETE
+
+## Parser Options
+
+The parser is configured with the following options:
+
+- `infer_types: true` - Enables type inference for schemas
+- `allow_remote: true` - Enables remote references resolving
+- `depth_limit: 1000` - Sets the maximum depth of schema generation
+
+## Customizing Ogen Configuration
+
+To customize the ogen configuration:
+
+1. Edit the `ogen.yml` file
+2. Run `task generate-clients` to regenerate the clients with the new configuration
+
+## Example Configuration
+
+```yaml
+generator:
+  features:
+    enable:
+      - "paths/client"
+      - "client/request/validation"
+    disable_all: true
+  filters:
+    path_regex: ".*"
+    methods: ["GET", "POST", "PUT", "DELETE"]
+
+parser:
+  infer_types: true
+  allow_remote: true
+  depth_limit: 1000
+``` 

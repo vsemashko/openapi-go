@@ -1,0 +1,54 @@
+---
+description: Task runner configuration and usage
+globs: Taskfile.yml
+alwaysApply: false
+---
+
+# Task Runner
+
+The project uses [Task](https://taskfile.dev/) as a task runner to automate common operations. The `Taskfile.yml` file defines the available tasks and their dependencies.
+
+## Available Tasks
+
+- `init` - Initialize git submodules (required for accessing the OpenAPI specs)
+- `generate-clients` - Generate Go clients from OpenAPI specs
+- `process-specs` - Process OpenAPI specs and run go mod tidy
+- `commit-changes` - Commit and push generated changes
+- `default` - Generate all clients and process specs (default task)
+- `ci` - Run the full CI pipeline including commit
+
+## Task Dependencies
+
+Tasks have dependencies that are automatically run before the task itself:
+- `generate-clients` depends on `init`
+- `process-specs` depends on `generate-clients`
+- `commit-changes` depends on `process-specs`
+
+## Environment Variables
+
+Tasks can be configured with environment variables:
+- `TARGET_SERVICES` - Regex pattern to filter services (default: `(funding-server-sdk|holidays-server-sdk|customer-data-sdk)`)
+- `SPECS_DIR` - Directory containing OpenAPI specs (default: `./external/sdk/sdk-packages`)
+- `OUTPUT_DIR` - Output directory for generated clients (default: `./generated`)
+
+## Running Tasks
+
+To run a task, use the `task` command followed by the task name:
+
+```bash
+# Run the default task
+task
+
+# Run a specific task
+task generate-clients
+
+# Run a task with environment variables
+TARGET_SERVICES="(funding-server-sdk)" task generate-clients
+```
+
+## CI/CD Integration
+
+The `commit-changes` task is designed to work in both local and CI environments:
+- In CI, it uses GitLab CI environment variables for git configuration
+- Locally, it uses your git configuration
+- It commits and pushes changes to the generated files

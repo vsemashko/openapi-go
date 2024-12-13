@@ -1,0 +1,12 @@
+# OpenAPI Go Generator Configuration
+
+# Directory containing OpenAPI specs
+specs_dir: "./external/sdk/sdk-packages"
+
+# Output directory for generated clients
+output_dir: "./generated"
+
+# Regex pattern to filter services
+target_services: "(funding-server-sdk|holidays-server-sdk|customer-data-sdk)"
+
+# You can add more configuration options here as needed 

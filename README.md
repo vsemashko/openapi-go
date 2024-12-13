@@ -1,93 +1,145 @@
-# Openapi Go
+# OpenAPI Go Generator
 
+## Overview
 
+OpenAPI Go Generator is a tool that automates the process of fetching OpenAPI specifications and generating Go stubs, services, and activities from them. It integrates seamlessly into a CI/CD pipeline, ensuring that the generated files are always up to date.
 
-## Getting started
+## Features
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+- Fetch OpenAPI specs from remote URLs.
+- Generate Go stubs for OpenAPI clients.
+- Create Go service and activity implementations.
+- Integrate with GitLab CI/CD for automated updates.
+- Automatically commit and push generated files to the repository.
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+## Repository Structure
 
-## Add your files
-
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
-
+```text
+.
+├── .gitlab-ci.yml            # GitLab CI/CD configuration
+├── README.md                # Project documentation
+├── go.mod                   # Go module file
+├── go.sum                   # Go dependencies
+├── main.go                  # Entry point for CLI
+├── openapi_spec_urls.json   # JSON file with OpenAPI spec URLs (optional)
+├── internal/                # Internal modules
+│   ├── processor/           # Combines fetching and generation logic
+│   │   └── processor.go
+├── generated/               # Generated files
+│   ├── stubs/               # Generated Go stubs
+│   └── services/            # Generated Go services and activities
 ```
-cd existing_repo
-git remote add origin https://gitlab.stashaway.com/vladimir.semashko/openapi-go.git
-git branch -M main
-git push -uf origin main
+
+## Getting Started
+
+### Prerequisites
+
+Install asdf version manager, then run:
+
+```bash
+asdf install
 ```
 
-## Integrate with your tools
+### Installation
 
-- [ ] [Set up project integrations](https://gitlab.stashaway.com/vladimir.semashko/openapi-go/-/settings/integrations)
+Clone the repository:
 
-## Collaborate with your team
+```bash
+git clone https://github.com/your-org/openapi-go-gen.git
+cd openapi-go-gen
+```
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+Install dependencies:
 
-## Test and Deploy
+```bash
+asdf install
+go mod tidy
+```
 
-Use the built-in continuous integration in GitLab.
+### Configuration
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+The tool is configured using the `resources/application.yml` file which is included in the repository. The default configuration includes:
 
-***
+```yaml
+# Directory containing OpenAPI specs
+specs_dir: "./external/sdk/sdk-packages"
 
-# Editing this README
+# Output directory for generated clients
+output_dir: "./generated"
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+# Regex pattern to filter services
+target_services: "(funding-server-sdk|holidays-server-sdk|customer-data-sdk)"
+```
 
-## Suggestions for a good README
+#### Overriding Configuration
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+You can override the configuration using environment variables:
 
-## Name
-Choose a self-explaining name for your project.
+```bash
+export SPECS_DIR="./path/to/specs"
+export OUTPUT_DIR="./path/to/output"
+export TARGET_SERVICES="my-service-sdk"
+```
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+### Usage
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+Run the generator locally:
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+```bash
+go run main.go
+```
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+This will fetch OpenAPI specs from the URLs defined in `openapi_spec_urls.json` and generate the stubs, services, and activities in the `generated/` directory.
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+### CI/CD Integration
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+The project integrates with GitLab CI/CD for automation.
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+#### GitLab CI/CD Pipeline
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+1. **Process Specs**:
+    - Fetch specs and generate stubs/services.
+2. **Commit Changes**:
+    - Commit and push the generated files back to the repository.
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+## Code Generation Process
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+The code generation process now involves two main steps, all integrated within the Go code:
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+1. **Filtering External Endpoints**: When generating clients, external endpoints (paths starting with `/external`) are filtered out, keeping only internal endpoints. This is done in the `internal/processor/processor.go` file.
 
-## License
-For open source projects, say how it is licensed.
+2. **Adding Internal Client Support**: After the clients are generated, the `NewInternalClient` function is automatically added to all SDK clients. This allows internal services to use the clients without requiring a security source. This is handled by the `internal/postprocess/postprocess.go` module.
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+## Task Commands
+
+You can run the following task commands to generate and process clients:
+
+```bash
+# Generate clients (includes filtering and adding NewInternalClient)
+task generate-clients
+
+# Run the full process (generate clients, go mod tidy)
+task
+```
+
+## Generated Client Features
+
+### Internal-Only Endpoints
+
+When generating the SDKs, the code generator filters out external endpoints and only includes internal endpoints. This is useful for services that only need to access other services' internal endpoints without exposing external endpoints.
+
+### Client Initialization Options
+
+The generated clients provide the following initialization methods:
+
+#### For all SDK clients
+
+```go
+// For all endpoints with security 
+client, err := sdkName.NewClient("https://service-url.example.com", securitySource)
+
+// For internal endpoints only without security
+client, err := sdkName.NewInternalClient("https://service-url.example.com")
+```
+
+The `NewInternalClient` function provides a way to initialize the client without requiring a security source, which is useful for services that only need to access internal endpoints.

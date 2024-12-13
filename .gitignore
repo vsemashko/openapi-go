@@ -1,0 +1,19 @@
+vendor
+bins
+.idea
+deploy/data/*
+.env*
+keys/*
+csv
+output_downloads
+build/datastax/*
+cover.out
+cover.xml
+.DS_Store
+.vscode**
+!.envrc.example
+# generated  # Commented out to allow committing the generated directory
+
+# Tools directory
+/tools/
+.task

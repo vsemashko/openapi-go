@@ -1,0 +1,65 @@
+version: '3'
+
+# Configuration is in resources/application.yml
+vars: {}
+
+tasks:
+  # ==============================
+  # MAIN TASKS - FOR DIRECT USAGE
+  # ==============================
+  
+  generate:
+    desc: Update submodules to latest and generate clients
+    summary: |
+      Updates git submodules to the latest version and generates Go clients from OpenAPI specs.
+      This task is used both for local development and CI/CD pipelines.
+    cmds:
+      - task: init
+      - task: generate-code
+
+  # ==============================
+  # UTILITY TASKS - INTERNAL USE
+  # ==============================
+  
+  init:
+    internal: true
+    desc: Initialize git submodules and update to latest
+    cmds:
+      # First ensure submodules are initialized
+      - git submodule update --init --recursive
+      # Then update the SDK submodule to the latest commit on main branch
+      # This is needed because git submodule update only updates to the commit referenced in the parent repo
+      - echo "Updating SDK submodule to the latest commit on main branch..."
+      - cd external/sdk && git checkout main && git pull origin main && cd ../..
+    status:
+      - test -f external/sdk/sdk-packages/aml-sdk/openapi.json
+
+  generate-code:
+    internal: true
+    desc: Generate Go clients from OpenAPI specs
+    deps: [init]
+    cmds:
+      - |
+        # Process OpenAPI specs and generate clients
+        # Configuration is in resources/application.yml
+        # To override defaults, set environment variables:
+        # - SPECS_DIR: Directory containing OpenAPI specs
+        # - OUTPUT_DIR: Output directory for generated clients
+        # - TARGET_SERVICES: Regex pattern to filter services
+        go run main.go
+      - go mod tidy
+    # The 'sources' field defines input files that this task depends on.
+    # Taskfile tracks these files and only runs the task if any of them have changed.
+    # This provides efficient incremental builds - the task only runs when necessary.
+    sources:
+      - ./external/sdk/sdk-packages/*/openapi.json  # OpenAPI spec files
+      - ogen.yml                                    # Ogen configuration
+      - main.go                                     # Main generation code
+      - internal/**/*.go                            # Internal generation code
+      - resources/application.yml                   # Configuration file
+    # The 'generates' field defines output files/directories that this task creates.
+    # Taskfile compares timestamps between source and generated files.
+    # The task runs only if source files are newer than generated files or if generated files don't exist.
+    # This prevents unnecessary regeneration when nothing has changed.
+    generates:
+      - ./generated/                                # Main generated directory with all output files
