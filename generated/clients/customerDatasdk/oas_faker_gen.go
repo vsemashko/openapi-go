@@ -1184,7 +1184,14 @@ func (s *AssetCriteria) SetFake() {
 	}
 	{
 		{
-			s.VerificationCriteria.SetFake()
+			s.VerificationCriteria = nil
+			for i := 0; i < 0; i++ {
+				var elem CircularReferenceStub
+				{
+					elem.SetFake()
+				}
+				s.VerificationCriteria = append(s.VerificationCriteria, elem)
+			}
 		}
 	}
 }
@@ -3273,6 +3280,82 @@ func (s *IntYearInInvestingSummaryCustomerIdGetInternalServerError) SetFake() {
 // SetFake set fake values.
 func (s *InvestingPersonality) SetFake() {
 	*s = InvestingPersonalityTHEEXPLORER
+}
+
+// SetFake set fake values.
+func (s *KnowledgeCriteria) SetFake() {
+	{
+		{
+			s.CreatedAt = time.Now()
+		}
+	}
+	{
+		{
+			s.CustomerId = "string"
+		}
+	}
+	{
+		{
+			s.FinanceQualifications = true
+		}
+	}
+	{
+		{
+			s.FinancialMarketExperience = true
+		}
+	}
+	{
+		{
+			s.ID = "string"
+		}
+	}
+	{
+		{
+			s.LastModifiedBy = "string"
+		}
+	}
+	{
+		{
+			s.Result.SetFake()
+		}
+	}
+	{
+		{
+			s.RiskAcceptance = true
+		}
+	}
+	{
+		{
+			s.RiskMoreComplexStructure = true
+		}
+	}
+	{
+		{
+			s.RiskPotentiallyIlliquid = true
+		}
+	}
+	{
+		{
+			s.RiskVolatility = true
+		}
+	}
+	{
+		{
+			s.UpdatedAt = time.Now()
+		}
+	}
+	{
+		{
+			s.VerificationCriteria = nil
+			for i := 0; i < 0; i++ {
+				var elem CircularReferenceStub
+				{
+					elem.SetFake()
+				}
+				s.VerificationCriteria = append(s.VerificationCriteria, elem)
+			}
+		}
+	}
 }
 
 // SetFake set fake values.

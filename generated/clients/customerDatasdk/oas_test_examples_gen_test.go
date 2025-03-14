@@ -2929,6 +2929,18 @@ func TestInvestingPersonality_EncodeDecode(t *testing.T) {
 	var typ2 InvestingPersonality
 	require.NoError(t, typ2.Decode(jx.DecodeBytes(data)))
 }
+func TestKnowledgeCriteria_EncodeDecode(t *testing.T) {
+	var typ KnowledgeCriteria
+	typ.SetFake()
+
+	e := jx.Encoder{}
+	typ.Encode(&e)
+	data := e.Bytes()
+	require.True(t, std.Valid(data), "Encoded: %s", data)
+
+	var typ2 KnowledgeCriteria
+	require.NoError(t, typ2.Decode(jx.DecodeBytes(data)))
+}
 func TestKnowledgeCriteriaResult_EncodeDecode(t *testing.T) {
 	var typ KnowledgeCriteriaResult
 	typ.SetFake()

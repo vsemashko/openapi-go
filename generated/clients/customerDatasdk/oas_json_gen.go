@@ -5665,9 +5665,13 @@ func (s *AssetCriteria) encodeFields(e *jx.Encoder) {
 		json.EncodeDateTime(e, s.UpdatedAt)
 	}
 	{
-		if s.VerificationCriteria.Set {
+		if s.VerificationCriteria != nil {
 			e.FieldStart("verificationCriteria")
-			s.VerificationCriteria.Encode(e)
+			e.ArrStart()
+			for _, elem := range s.VerificationCriteria {
+				elem.Encode(e)
+			}
+			e.ArrEnd()
 		}
 	}
 }
@@ -5811,8 +5815,15 @@ func (s *AssetCriteria) Decode(d *jx.Decoder) error {
 			}
 		case "verificationCriteria":
 			if err := func() error {
-				s.VerificationCriteria.Reset()
-				if err := s.VerificationCriteria.Decode(d); err != nil {
+				s.VerificationCriteria = make([]CircularReferenceStub, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem CircularReferenceStub
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.VerificationCriteria = append(s.VerificationCriteria, elem)
+					return nil
+				}); err != nil {
 					return err
 				}
 				return nil
@@ -16626,6 +16637,316 @@ func (s InvestingPersonality) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *InvestingPersonality) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *KnowledgeCriteria) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *KnowledgeCriteria) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("createdAt")
+		json.EncodeDateTime(e, s.CreatedAt)
+	}
+	{
+		e.FieldStart("customerId")
+		e.Str(s.CustomerId)
+	}
+	{
+		e.FieldStart("financeQualifications")
+		e.Bool(s.FinanceQualifications)
+	}
+	{
+		e.FieldStart("financialMarketExperience")
+		e.Bool(s.FinancialMarketExperience)
+	}
+	{
+		e.FieldStart("id")
+		e.Str(s.ID)
+	}
+	{
+		e.FieldStart("lastModifiedBy")
+		e.Str(s.LastModifiedBy)
+	}
+	{
+		e.FieldStart("result")
+		s.Result.Encode(e)
+	}
+	{
+		e.FieldStart("riskAcceptance")
+		e.Bool(s.RiskAcceptance)
+	}
+	{
+		e.FieldStart("riskMoreComplexStructure")
+		e.Bool(s.RiskMoreComplexStructure)
+	}
+	{
+		e.FieldStart("riskPotentiallyIlliquid")
+		e.Bool(s.RiskPotentiallyIlliquid)
+	}
+	{
+		e.FieldStart("riskVolatility")
+		e.Bool(s.RiskVolatility)
+	}
+	{
+		e.FieldStart("updatedAt")
+		json.EncodeDateTime(e, s.UpdatedAt)
+	}
+	{
+		if s.VerificationCriteria != nil {
+			e.FieldStart("verificationCriteria")
+			e.ArrStart()
+			for _, elem := range s.VerificationCriteria {
+				elem.Encode(e)
+			}
+			e.ArrEnd()
+		}
+	}
+}
+
+var jsonFieldsNameOfKnowledgeCriteria = [13]string{
+	0:  "createdAt",
+	1:  "customerId",
+	2:  "financeQualifications",
+	3:  "financialMarketExperience",
+	4:  "id",
+	5:  "lastModifiedBy",
+	6:  "result",
+	7:  "riskAcceptance",
+	8:  "riskMoreComplexStructure",
+	9:  "riskPotentiallyIlliquid",
+	10: "riskVolatility",
+	11: "updatedAt",
+	12: "verificationCriteria",
+}
+
+// Decode decodes KnowledgeCriteria from json.
+func (s *KnowledgeCriteria) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode KnowledgeCriteria to nil")
+	}
+	var requiredBitSet [2]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "createdAt":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := json.DecodeDateTime(d)
+				s.CreatedAt = v
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"createdAt\"")
+			}
+		case "customerId":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.CustomerId = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"customerId\"")
+			}
+		case "financeQualifications":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Bool()
+				s.FinanceQualifications = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"financeQualifications\"")
+			}
+		case "financialMarketExperience":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				v, err := d.Bool()
+				s.FinancialMarketExperience = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"financialMarketExperience\"")
+			}
+		case "id":
+			requiredBitSet[0] |= 1 << 4
+			if err := func() error {
+				v, err := d.Str()
+				s.ID = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"id\"")
+			}
+		case "lastModifiedBy":
+			requiredBitSet[0] |= 1 << 5
+			if err := func() error {
+				v, err := d.Str()
+				s.LastModifiedBy = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"lastModifiedBy\"")
+			}
+		case "result":
+			requiredBitSet[0] |= 1 << 6
+			if err := func() error {
+				if err := s.Result.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"result\"")
+			}
+		case "riskAcceptance":
+			requiredBitSet[0] |= 1 << 7
+			if err := func() error {
+				v, err := d.Bool()
+				s.RiskAcceptance = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"riskAcceptance\"")
+			}
+		case "riskMoreComplexStructure":
+			requiredBitSet[1] |= 1 << 0
+			if err := func() error {
+				v, err := d.Bool()
+				s.RiskMoreComplexStructure = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"riskMoreComplexStructure\"")
+			}
+		case "riskPotentiallyIlliquid":
+			requiredBitSet[1] |= 1 << 1
+			if err := func() error {
+				v, err := d.Bool()
+				s.RiskPotentiallyIlliquid = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"riskPotentiallyIlliquid\"")
+			}
+		case "riskVolatility":
+			requiredBitSet[1] |= 1 << 2
+			if err := func() error {
+				v, err := d.Bool()
+				s.RiskVolatility = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"riskVolatility\"")
+			}
+		case "updatedAt":
+			requiredBitSet[1] |= 1 << 3
+			if err := func() error {
+				v, err := json.DecodeDateTime(d)
+				s.UpdatedAt = v
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"updatedAt\"")
+			}
+		case "verificationCriteria":
+			if err := func() error {
+				s.VerificationCriteria = make([]CircularReferenceStub, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem CircularReferenceStub
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.VerificationCriteria = append(s.VerificationCriteria, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"verificationCriteria\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode KnowledgeCriteria")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [2]uint8{
+		0b11111111,
+		0b00001111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfKnowledgeCriteria) {
+					name = jsonFieldsNameOfKnowledgeCriteria[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *KnowledgeCriteria) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *KnowledgeCriteria) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"gitlab.stashaway.com/vladimir.semashko/openapi-go/internal/config"
+	"gitlab.stashaway.com/vladimir.semashko/openapi-go/internal/preprocessor"
 )
 
 // ProcessOpenAPISpecs processes OpenAPI specifications and generates client code.
@@ -108,8 +109,20 @@ func generateClientForSpec(specPath, serviceName, folderName, outputDir string) 
 		return fmt.Errorf("failed to create client directory for %s: %w", serviceName, err)
 	}
 
+	// Convert OpenAPI 3.1 to 3.0.3 if needed
+	compatibleSpecPath, err := preprocessor.EnsureOpenAPICompatibility(specPath)
+	if err != nil {
+		return fmt.Errorf("failed to ensure OpenAPI compatibility for %s: %w", serviceName, err)
+	}
+	defer func() {
+		// Clean up temporary file if one was created
+		if compatibleSpecPath != specPath {
+			os.Remove(compatibleSpecPath)
+		}
+	}()
+
 	// Run the client generator
-	if err := runOgenGenerator(folderName, specPath, clientPath); err != nil {
+	if err := runOgenGenerator(folderName, compatibleSpecPath, clientPath); err != nil {
 		return err
 	}
 

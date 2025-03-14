@@ -1006,6 +1006,17 @@ func (s *AssetCriteria) Validate() error {
 		})
 	}
 	if err := func() error {
+		if err := s.Currency.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "currency",
+			Error: err,
+		})
+	}
+	if err := func() error {
 		if err := (validate.Float{}).Validate(float64(s.QualifyingAmount)); err != nil {
 			return errors.Wrap(err, "float")
 		}
@@ -2020,6 +2031,17 @@ func (s *DocumentCriteriaItem) Validate() error {
 	}
 
 	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.DocumentCriteria.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "documentCriteria",
+			Error: err,
+		})
+	}
 	if err := func() error {
 		if err := (validate.Float{}).Validate(float64(s.ID)); err != nil {
 			return errors.Wrap(err, "float")
@@ -3346,6 +3368,29 @@ func (s InvestingPersonality) Validate() error {
 	}
 }
 
+func (s *KnowledgeCriteria) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Result.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "result",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
 func (s KnowledgeCriteriaResult) Validate() error {
 	switch s {
 	case "PASSED":
@@ -3639,6 +3684,17 @@ func (s *VerificationCriteria) Validate() error {
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
 			Name:  "documentCriteria",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.KnowledgeCriteria.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "knowledgeCriteria",
 			Error: err,
 		})
 	}

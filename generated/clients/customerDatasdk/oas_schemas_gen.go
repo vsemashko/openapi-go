@@ -2978,17 +2978,17 @@ func (s *AccountVerificationStates) UnmarshalText(data []byte) error {
 
 // Ref: #/components/schemas/AssetCriteria
 type AssetCriteria struct {
-	ActualAmount         float64                  `json:"actualAmount"`
-	AssetType            AssetType                `json:"assetType"`
-	CreatedAt            time.Time                `json:"createdAt"`
-	Currency             CircularReferenceStub    `json:"currency"`
-	CustomerId           string                   `json:"customerId"`
-	ID                   string                   `json:"id"`
-	LastModifiedBy       string                   `json:"lastModifiedBy"`
-	QualifyingAmount     float64                  `json:"qualifyingAmount"`
-	Result               CriteriaResult           `json:"result"`
-	UpdatedAt            time.Time                `json:"updatedAt"`
-	VerificationCriteria OptCircularReferenceStub `json:"verificationCriteria"`
+	ActualAmount         float64                 `json:"actualAmount"`
+	AssetType            AssetType               `json:"assetType"`
+	CreatedAt            time.Time               `json:"createdAt"`
+	Currency             Currency                `json:"currency"`
+	CustomerId           string                  `json:"customerId"`
+	ID                   string                  `json:"id"`
+	LastModifiedBy       string                  `json:"lastModifiedBy"`
+	QualifyingAmount     float64                 `json:"qualifyingAmount"`
+	Result               CriteriaResult          `json:"result"`
+	UpdatedAt            time.Time               `json:"updatedAt"`
+	VerificationCriteria []CircularReferenceStub `json:"verificationCriteria"`
 }
 
 // GetActualAmount returns the value of ActualAmount.
@@ -3007,7 +3007,7 @@ func (s *AssetCriteria) GetCreatedAt() time.Time {
 }
 
 // GetCurrency returns the value of Currency.
-func (s *AssetCriteria) GetCurrency() CircularReferenceStub {
+func (s *AssetCriteria) GetCurrency() Currency {
 	return s.Currency
 }
 
@@ -3042,7 +3042,7 @@ func (s *AssetCriteria) GetUpdatedAt() time.Time {
 }
 
 // GetVerificationCriteria returns the value of VerificationCriteria.
-func (s *AssetCriteria) GetVerificationCriteria() OptCircularReferenceStub {
+func (s *AssetCriteria) GetVerificationCriteria() []CircularReferenceStub {
 	return s.VerificationCriteria
 }
 
@@ -3062,7 +3062,7 @@ func (s *AssetCriteria) SetCreatedAt(val time.Time) {
 }
 
 // SetCurrency sets the value of Currency.
-func (s *AssetCriteria) SetCurrency(val CircularReferenceStub) {
+func (s *AssetCriteria) SetCurrency(val Currency) {
 	s.Currency = val
 }
 
@@ -3097,7 +3097,7 @@ func (s *AssetCriteria) SetUpdatedAt(val time.Time) {
 }
 
 // SetVerificationCriteria sets the value of VerificationCriteria.
-func (s *AssetCriteria) SetVerificationCriteria(val OptCircularReferenceStub) {
+func (s *AssetCriteria) SetVerificationCriteria(val []CircularReferenceStub) {
 	s.VerificationCriteria = val
 }
 
@@ -4978,15 +4978,15 @@ func (s *DocumentCriteria) SetVerificationCriteria(val OptCircularReferenceStub)
 
 // Ref: #/components/schemas/DocumentCriteriaItem
 type DocumentCriteriaItem struct {
-	CreatedAt          time.Time             `json:"createdAt"`
-	CriteriaType       string                `json:"criteriaType"`
-	CustomerId         string                `json:"customerId"`
-	DocumentCriteria   CircularReferenceStub `json:"documentCriteria"`
-	DocumentCriteriaId string                `json:"documentCriteriaId"`
-	DocumentId         string                `json:"documentId"`
-	ID                 float64               `json:"id"`
-	LastModifiedBy     string                `json:"lastModifiedBy"`
-	UpdatedAt          time.Time             `json:"updatedAt"`
+	CreatedAt          time.Time        `json:"createdAt"`
+	CriteriaType       string           `json:"criteriaType"`
+	CustomerId         string           `json:"customerId"`
+	DocumentCriteria   DocumentCriteria `json:"documentCriteria"`
+	DocumentCriteriaId string           `json:"documentCriteriaId"`
+	DocumentId         string           `json:"documentId"`
+	ID                 float64          `json:"id"`
+	LastModifiedBy     string           `json:"lastModifiedBy"`
+	UpdatedAt          time.Time        `json:"updatedAt"`
 }
 
 // GetCreatedAt returns the value of CreatedAt.
@@ -5005,7 +5005,7 @@ func (s *DocumentCriteriaItem) GetCustomerId() string {
 }
 
 // GetDocumentCriteria returns the value of DocumentCriteria.
-func (s *DocumentCriteriaItem) GetDocumentCriteria() CircularReferenceStub {
+func (s *DocumentCriteriaItem) GetDocumentCriteria() DocumentCriteria {
 	return s.DocumentCriteria
 }
 
@@ -5050,7 +5050,7 @@ func (s *DocumentCriteriaItem) SetCustomerId(val string) {
 }
 
 // SetDocumentCriteria sets the value of DocumentCriteria.
-func (s *DocumentCriteriaItem) SetDocumentCriteria(val CircularReferenceStub) {
+func (s *DocumentCriteriaItem) SetDocumentCriteria(val DocumentCriteria) {
 	s.DocumentCriteria = val
 }
 
@@ -8095,6 +8095,153 @@ func (s *InvestingPersonality) UnmarshalText(data []byte) error {
 	default:
 		return errors.Errorf("invalid value: %q", data)
 	}
+}
+
+// Ref: #/components/schemas/KnowledgeCriteria
+type KnowledgeCriteria struct {
+	CreatedAt                 time.Time               `json:"createdAt"`
+	CustomerId                string                  `json:"customerId"`
+	FinanceQualifications     bool                    `json:"financeQualifications"`
+	FinancialMarketExperience bool                    `json:"financialMarketExperience"`
+	ID                        string                  `json:"id"`
+	LastModifiedBy            string                  `json:"lastModifiedBy"`
+	Result                    KnowledgeCriteriaResult `json:"result"`
+	RiskAcceptance            bool                    `json:"riskAcceptance"`
+	RiskMoreComplexStructure  bool                    `json:"riskMoreComplexStructure"`
+	RiskPotentiallyIlliquid   bool                    `json:"riskPotentiallyIlliquid"`
+	RiskVolatility            bool                    `json:"riskVolatility"`
+	UpdatedAt                 time.Time               `json:"updatedAt"`
+	VerificationCriteria      []CircularReferenceStub `json:"verificationCriteria"`
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *KnowledgeCriteria) GetCreatedAt() time.Time {
+	return s.CreatedAt
+}
+
+// GetCustomerId returns the value of CustomerId.
+func (s *KnowledgeCriteria) GetCustomerId() string {
+	return s.CustomerId
+}
+
+// GetFinanceQualifications returns the value of FinanceQualifications.
+func (s *KnowledgeCriteria) GetFinanceQualifications() bool {
+	return s.FinanceQualifications
+}
+
+// GetFinancialMarketExperience returns the value of FinancialMarketExperience.
+func (s *KnowledgeCriteria) GetFinancialMarketExperience() bool {
+	return s.FinancialMarketExperience
+}
+
+// GetID returns the value of ID.
+func (s *KnowledgeCriteria) GetID() string {
+	return s.ID
+}
+
+// GetLastModifiedBy returns the value of LastModifiedBy.
+func (s *KnowledgeCriteria) GetLastModifiedBy() string {
+	return s.LastModifiedBy
+}
+
+// GetResult returns the value of Result.
+func (s *KnowledgeCriteria) GetResult() KnowledgeCriteriaResult {
+	return s.Result
+}
+
+// GetRiskAcceptance returns the value of RiskAcceptance.
+func (s *KnowledgeCriteria) GetRiskAcceptance() bool {
+	return s.RiskAcceptance
+}
+
+// GetRiskMoreComplexStructure returns the value of RiskMoreComplexStructure.
+func (s *KnowledgeCriteria) GetRiskMoreComplexStructure() bool {
+	return s.RiskMoreComplexStructure
+}
+
+// GetRiskPotentiallyIlliquid returns the value of RiskPotentiallyIlliquid.
+func (s *KnowledgeCriteria) GetRiskPotentiallyIlliquid() bool {
+	return s.RiskPotentiallyIlliquid
+}
+
+// GetRiskVolatility returns the value of RiskVolatility.
+func (s *KnowledgeCriteria) GetRiskVolatility() bool {
+	return s.RiskVolatility
+}
+
+// GetUpdatedAt returns the value of UpdatedAt.
+func (s *KnowledgeCriteria) GetUpdatedAt() time.Time {
+	return s.UpdatedAt
+}
+
+// GetVerificationCriteria returns the value of VerificationCriteria.
+func (s *KnowledgeCriteria) GetVerificationCriteria() []CircularReferenceStub {
+	return s.VerificationCriteria
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *KnowledgeCriteria) SetCreatedAt(val time.Time) {
+	s.CreatedAt = val
+}
+
+// SetCustomerId sets the value of CustomerId.
+func (s *KnowledgeCriteria) SetCustomerId(val string) {
+	s.CustomerId = val
+}
+
+// SetFinanceQualifications sets the value of FinanceQualifications.
+func (s *KnowledgeCriteria) SetFinanceQualifications(val bool) {
+	s.FinanceQualifications = val
+}
+
+// SetFinancialMarketExperience sets the value of FinancialMarketExperience.
+func (s *KnowledgeCriteria) SetFinancialMarketExperience(val bool) {
+	s.FinancialMarketExperience = val
+}
+
+// SetID sets the value of ID.
+func (s *KnowledgeCriteria) SetID(val string) {
+	s.ID = val
+}
+
+// SetLastModifiedBy sets the value of LastModifiedBy.
+func (s *KnowledgeCriteria) SetLastModifiedBy(val string) {
+	s.LastModifiedBy = val
+}
+
+// SetResult sets the value of Result.
+func (s *KnowledgeCriteria) SetResult(val KnowledgeCriteriaResult) {
+	s.Result = val
+}
+
+// SetRiskAcceptance sets the value of RiskAcceptance.
+func (s *KnowledgeCriteria) SetRiskAcceptance(val bool) {
+	s.RiskAcceptance = val
+}
+
+// SetRiskMoreComplexStructure sets the value of RiskMoreComplexStructure.
+func (s *KnowledgeCriteria) SetRiskMoreComplexStructure(val bool) {
+	s.RiskMoreComplexStructure = val
+}
+
+// SetRiskPotentiallyIlliquid sets the value of RiskPotentiallyIlliquid.
+func (s *KnowledgeCriteria) SetRiskPotentiallyIlliquid(val bool) {
+	s.RiskPotentiallyIlliquid = val
+}
+
+// SetRiskVolatility sets the value of RiskVolatility.
+func (s *KnowledgeCriteria) SetRiskVolatility(val bool) {
+	s.RiskVolatility = val
+}
+
+// SetUpdatedAt sets the value of UpdatedAt.
+func (s *KnowledgeCriteria) SetUpdatedAt(val time.Time) {
+	s.UpdatedAt = val
+}
+
+// SetVerificationCriteria sets the value of VerificationCriteria.
+func (s *KnowledgeCriteria) SetVerificationCriteria(val []CircularReferenceStub) {
+	s.VerificationCriteria = val
 }
 
 // Ref: #/components/schemas/KnowledgeCriteriaResult
@@ -11866,7 +12013,7 @@ type VerificationCriteria struct {
 	DocumentCriteria          DocumentCriteria         `json:"documentCriteria"`
 	DocumentCriteriaId        string                   `json:"documentCriteriaId"`
 	ID                        string                   `json:"id"`
-	KnowledgeCriteria         CircularReferenceStub    `json:"knowledgeCriteria"`
+	KnowledgeCriteria         KnowledgeCriteria        `json:"knowledgeCriteria"`
 	KnowledgeCriteriaId       string                   `json:"knowledgeCriteriaId"`
 	LastModifiedBy            string                   `json:"lastModifiedBy"`
 	RejectedReason            string                   `json:"rejectedReason"`
@@ -11926,7 +12073,7 @@ func (s *VerificationCriteria) GetID() string {
 }
 
 // GetKnowledgeCriteria returns the value of KnowledgeCriteria.
-func (s *VerificationCriteria) GetKnowledgeCriteria() CircularReferenceStub {
+func (s *VerificationCriteria) GetKnowledgeCriteria() KnowledgeCriteria {
 	return s.KnowledgeCriteria
 }
 
@@ -12011,7 +12158,7 @@ func (s *VerificationCriteria) SetID(val string) {
 }
 
 // SetKnowledgeCriteria sets the value of KnowledgeCriteria.
-func (s *VerificationCriteria) SetKnowledgeCriteria(val CircularReferenceStub) {
+func (s *VerificationCriteria) SetKnowledgeCriteria(val KnowledgeCriteria) {
 	s.KnowledgeCriteria = val
 }
 
