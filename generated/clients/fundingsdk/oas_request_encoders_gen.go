@@ -193,6 +193,20 @@ func encodeIntergoalTransferRequestExternalControllerCreateIntergoalTransferRequ
 	return nil
 }
 
+func encodeIntergoalTransferRequestInternalControllerCancelRequest(
+	req *CancelIntergoalTransferDTO,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
 func encodeIntergoalTransferRequestInternalControllerCreateIntergoalTransferRequestRequest(
 	req *StartIGTRequestWorkflowRequestDTO,
 	r *http.Request,
@@ -279,6 +293,20 @@ func encodeWithdrawalsExternalControllerSubmitWithdrawalRequestsRequest(
 
 func encodeWithdrawalsInternalControllerBatchApproveFlaggedWithdrawalsRequest(
 	req *BatchWithdrawalApprovalInputDto,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
+func encodeWithdrawalsInternalControllerCreateWithdrawalRequest(
+	req *CreateWithdrawalBodyInternalDTO,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"

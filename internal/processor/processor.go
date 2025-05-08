@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 
 	"gitlab.stashaway.com/vladimir.semashko/openapi-go/internal/config"
-	"gitlab.stashaway.com/vladimir.semashko/openapi-go/internal/preprocessor"
 )
 
 // ProcessOpenAPISpecs processes OpenAPI specifications and generates client code.
@@ -109,21 +108,21 @@ func generateClientForSpec(specPath, serviceName, folderName, outputDir string) 
 		return fmt.Errorf("failed to create client directory for %s: %w", serviceName, err)
 	}
 
-	// Convert OpenAPI 3.1 to 3.0.3 if needed
-	compatibleSpecPath, err := preprocessor.EnsureOpenAPICompatibility(specPath)
-	if err != nil {
-		return fmt.Errorf("failed to ensure OpenAPI compatibility for %s: %w", serviceName, err)
+	// Clean existing files in the client directory
+	log.Printf("Cleaning existing files for %s...", folderName)
+	if err := cleanDirectory(clientPath); err != nil {
+		return fmt.Errorf("failed to clean client directory for %s: %w", serviceName, err)
 	}
-	defer func() {
-		// Clean up temporary file if one was created
-		if compatibleSpecPath != specPath {
-			os.Remove(compatibleSpecPath)
-		}
-	}()
 
 	// Run the client generator
-	if err := runOgenGenerator(folderName, compatibleSpecPath, clientPath); err != nil {
+	if err := runOgenGenerator(folderName, specPath, clientPath); err != nil {
 		return err
+	}
+
+	// Apply post-processors to the generated client
+	log.Printf("Applying post-processors for %s...", folderName)
+	if err := ApplyPostProcessors(clientPath, folderName); err != nil {
+		return fmt.Errorf("failed to apply post-processors for %s: %w", folderName, err)
 	}
 
 	log.Printf("Successfully generated client for %s", folderName)

@@ -2,6 +2,8 @@ package processor
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -56,4 +58,45 @@ func normalizeServiceName(service string) string {
 	}
 
 	return strings.Join(parts, "")
+}
+
+// cleanDirectory removes all files in the specified directory.
+// It returns an error if the directory doesn't exist or if there's an issue removing files.
+func cleanDirectory(dir string) error {
+	// Check if directory exists
+	_, err := os.Stat(dir)
+	if os.IsNotExist(err) {
+		return nil // Directory doesn't exist, nothing to clean
+	}
+	if err != nil {
+		return fmt.Errorf("failed to access directory %s: %w", dir, err)
+	}
+
+	// Read directory entries
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return fmt.Errorf("failed to read directory %s: %w", dir, err)
+	}
+
+	// Remove each file
+	for _, entry := range entries {
+		path := filepath.Join(dir, entry.Name())
+		if entry.IsDir() {
+			// Recursively clean subdirectories
+			if err := cleanDirectory(path); err != nil {
+				return err
+			}
+			// Remove the now-empty directory
+			if err := os.Remove(path); err != nil {
+				return fmt.Errorf("failed to remove directory %s: %w", path, err)
+			}
+		} else {
+			// Remove file
+			if err := os.Remove(path); err != nil {
+				return fmt.Errorf("failed to remove file %s: %w", path, err)
+			}
+		}
+	}
+
+	return nil
 }

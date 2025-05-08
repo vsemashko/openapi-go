@@ -32,12 +32,26 @@ type Invoker interface {
 	//
 	// POST /internal/v1/whitelisted-customer-banks
 	CustomerBankWhitelistInternalControllerCreateWhitelistedCustomerBank(ctx context.Context, request *CreateWhitelistedCustomerBankRequestDto) error
-	// CustomerBanksExternalControllerGetCustomerBanks invokes CustomerBanksExternalController_getCustomerBanks operation.
+	// CustomerBanksExternalControllerV1GetCustomerBanks invokes CustomerBanksExternalControllerV1_getCustomerBanks operation.
 	//
 	// Endpoint to get customer banks.
 	//
+	// Deprecated: schema marks this operation as deprecated.
+	//
 	// GET /external/v1/customer-banks
-	CustomerBanksExternalControllerGetCustomerBanks(ctx context.Context, params CustomerBanksExternalControllerGetCustomerBanksParams) ([]CustomerBankDto, error)
+	CustomerBanksExternalControllerV1GetCustomerBanks(ctx context.Context, params CustomerBanksExternalControllerV1GetCustomerBanksParams) ([]CustomerBankDto, error)
+	// CustomerBanksExternalControllerV2GetCustomerBanksV2 invokes CustomerBanksExternalControllerV2_getCustomerBanksV2 operation.
+	//
+	// Endpoint to get customer banks.
+	//
+	// GET /external/v2/customer-banks
+	CustomerBanksExternalControllerV2GetCustomerBanksV2(ctx context.Context, params CustomerBanksExternalControllerV2GetCustomerBanksV2Params) ([]CustomerBankDto, error)
+	// CustomerBanksExternalControllerV2GetCustomerBanksV2Unmasked invokes CustomerBanksExternalControllerV2_getCustomerBanksV2Unmasked operation.
+	//
+	// Endpoint to get customer banks with bank account number unmasked.
+	//
+	// GET /external/v2/customer-banks/unmasked
+	CustomerBanksExternalControllerV2GetCustomerBanksV2Unmasked(ctx context.Context, params CustomerBanksExternalControllerV2GetCustomerBanksV2UnmaskedParams) ([]CustomerBankDto, error)
 	// CustomerBanksInternalControllerGetWithdrawalCustomerBank invokes CustomerBanksInternalController_getWithdrawalCustomerBank operation.
 	//
 	// GET /internal/v1/customer-banks/account-uuid/{accountUuid}/banks/{bankId}
@@ -174,7 +188,7 @@ type Invoker interface {
 	// Endpoint to delete bank by id.
 	//
 	// DELETE /external/v1/fast/customer-banks/{id}
-	FastExternalControllerDeleteCustomerBank(ctx context.Context, params FastExternalControllerDeleteCustomerBankParams) error
+	FastExternalControllerDeleteCustomerBank(ctx context.Context, params FastExternalControllerDeleteCustomerBankParams) (*CustomerBankDto, error)
 	// FastExternalControllerGetRetailBankList invokes FastExternalController_getRetailBankList operation.
 	//
 	// Endpoint to get all retail banks from ACME.
@@ -217,6 +231,12 @@ type Invoker interface {
 	//
 	// GET /external/v1/intergoal-transfer-request/duration
 	IntergoalTransferRequestExternalControllerGetIntergoalTransfersDuration(ctx context.Context, params IntergoalTransferRequestExternalControllerGetIntergoalTransfersDurationParams) error
+	// IntergoalTransferRequestInternalControllerCancel invokes IntergoalTransferRequestInternalController_cancel operation.
+	//
+	// Cancels an Intergoal Transfer Request.
+	//
+	// POST /internal/v1/intergoal-transfer-request/{id}/cancel
+	IntergoalTransferRequestInternalControllerCancel(ctx context.Context, request *CancelIntergoalTransferDTO, params IntergoalTransferRequestInternalControllerCancelParams) error
 	// IntergoalTransferRequestInternalControllerCreateIntergoalTransferRequest invokes IntergoalTransferRequestInternalController_createIntergoalTransferRequest operation.
 	//
 	// Starts IGTRequest Workflow.
@@ -277,6 +297,12 @@ type Invoker interface {
 	//
 	// POST /external/v1/lean/customers
 	LeanExternalControllerGetOrCreateLeanCustomer(ctx context.Context) (*GetLeanCustomerDto, error)
+	// LeanInternalControllerGetLeanUserByAccountUuid invokes LeanInternalController_getLeanUserByAccountUuid operation.
+	//
+	// Endpoint to get LEAN customer.
+	//
+	// GET /internal/v1/lean/user/{accountUuid}
+	LeanInternalControllerGetLeanUserByAccountUuid(ctx context.Context, params LeanInternalControllerGetLeanUserByAccountUuidParams) (*LeanCustomer, error)
 	// LeanInternalControllerTestConnectivity invokes LeanInternalController_testConnectivity operation.
 	//
 	// Endpoint to test connectivity with Lean.
@@ -351,14 +377,49 @@ type Invoker interface {
 	//
 	// GET /internal/v1/srs/subTransfers
 	SrsInternalControllerGetSrsTransferRequestsWithSubTransfers(ctx context.Context, params SrsInternalControllerGetSrsTransferRequestsWithSubTransfersParams) ([]SrsTransferRequestSubtransfers, error)
+	// WithdrawalsExternalControllerGetWithdrawalById invokes WithdrawalsExternalController_getWithdrawalById operation.
+	//
+	// Retrieves a withdrawal record by its UUID.
+	//
+	// GET /external/v1/transactions/withdrawal/{uuid}
+	WithdrawalsExternalControllerGetWithdrawalById(ctx context.Context, params WithdrawalsExternalControllerGetWithdrawalByIdParams) (WithdrawalsExternalControllerGetWithdrawalByIdRes, error)
+	// WithdrawalsExternalControllerListWithdrawalsByAccount invokes WithdrawalsExternalController_listWithdrawalsByAccount operation.
+	//
+	// Retrieves withdrawal records for a specific account with pagination support.
+	//
+	// GET /external/v1/transactions/withdrawal
+	WithdrawalsExternalControllerListWithdrawalsByAccount(ctx context.Context, params WithdrawalsExternalControllerListWithdrawalsByAccountParams) (WithdrawalsExternalControllerListWithdrawalsByAccountRes, error)
 	// WithdrawalsExternalControllerSubmitWithdrawalRequests invokes WithdrawalsExternalController_submitWithdrawalRequests operation.
 	//
 	// POST /external/v1/transactions/withdrawal/submit
 	WithdrawalsExternalControllerSubmitWithdrawalRequests(ctx context.Context, request *ExternalSubmitWithdrawalRequestsInputDto) (*SubmitWithdrawalRequestsResponseDto, error)
+	// WithdrawalsInternalControllerAllowedCurrencies invokes WithdrawalsInternalController_allowedCurrencies operation.
+	//
+	// GET /internal/v1/transactions/withdrawal/allowed-currencies/{userId}
+	WithdrawalsInternalControllerAllowedCurrencies(ctx context.Context, params WithdrawalsInternalControllerAllowedCurrenciesParams) ([]string, error)
 	// WithdrawalsInternalControllerBatchApproveFlaggedWithdrawals invokes WithdrawalsInternalController_batchApproveFlaggedWithdrawals operation.
 	//
 	// POST /internal/v1/transactions/withdrawal/batch-approve-flagged-withdrawals
 	WithdrawalsInternalControllerBatchApproveFlaggedWithdrawals(ctx context.Context, request *BatchWithdrawalApprovalInputDto) (*BatchWithdrawalApprovalResponseDto, error)
+	// WithdrawalsInternalControllerCreateWithdrawal invokes WithdrawalsInternalController_createWithdrawal operation.
+	//
+	// Creates a new withdrawal record with the provided details. This endpoint is just creating the
+	// entity (should only be called by withdrawal workflow).
+	//
+	// POST /internal/v1/transactions/withdrawal
+	WithdrawalsInternalControllerCreateWithdrawal(ctx context.Context, request *CreateWithdrawalBodyInternalDTO) (WithdrawalsInternalControllerCreateWithdrawalRes, error)
+	// WithdrawalsInternalControllerGetWithdrawalById invokes WithdrawalsInternalController_getWithdrawalById operation.
+	//
+	// Retrieves a withdrawal record by its UUID.
+	//
+	// GET /internal/v1/transactions/withdrawal/{uuid}
+	WithdrawalsInternalControllerGetWithdrawalById(ctx context.Context, params WithdrawalsInternalControllerGetWithdrawalByIdParams) (WithdrawalsInternalControllerGetWithdrawalByIdRes, error)
+	// WithdrawalsInternalControllerListWithdrawalsByAccount invokes WithdrawalsInternalController_listWithdrawalsByAccount operation.
+	//
+	// Retrieves withdrawal records for a specific account with pagination support.
+	//
+	// GET /internal/v1/transactions/withdrawal
+	WithdrawalsInternalControllerListWithdrawalsByAccount(ctx context.Context, params WithdrawalsInternalControllerListWithdrawalsByAccountParams) (WithdrawalsInternalControllerListWithdrawalsByAccountRes, error)
 	// WithdrawalsInternalControllerSubmitWithdrawalRequests invokes WithdrawalsInternalController_submitWithdrawalRequests operation.
 	//
 	// POST /internal/v1/transactions/withdrawal/submit
@@ -391,35 +452,6 @@ func NewClient(serverURL string, sec SecuritySource, opts ...ClientOption) (*Cli
 	return &Client{
 		serverURL:  u,
 		sec:        sec,
-		baseClient: c,
-	}, nil
-}
-// SecuritySourceOptional represents an optional security source implementation
-// that returns empty security settings
-type SecuritySourceOptional struct{}
-
-// Bearer provides an empty bearer token for internal use
-func (s *SecuritySourceOptional) Bearer(ctx context.Context, operationName string) (Bearer, error) {
-	return Bearer{}, nil
-}
-
-// NewInternalClient initializes a Client that can be used for internal endpoints without security
-// This is specifically for internal endpoints that don't require authentication
-func NewInternalClient(serverURL string, opts ...ClientOption) (*Client, error) {
-	u, err := url.Parse(serverURL)
-	if err != nil {
-		return nil, err
-	}
-	trimTrailingSlashes(u)
-
-	c, err := newClientConfig(opts...).baseClient()
-	if err != nil {
-		return nil, err
-	}
-	
-	return &Client{
-		serverURL:  u,
-		sec:        &SecuritySourceOptional{},
 		baseClient: c,
 	}, nil
 }
@@ -515,17 +547,19 @@ func (c *Client) sendCustomerBankWhitelistInternalControllerCreateWhitelistedCus
 	return result, nil
 }
 
-// CustomerBanksExternalControllerGetCustomerBanks invokes CustomerBanksExternalController_getCustomerBanks operation.
+// CustomerBanksExternalControllerV1GetCustomerBanks invokes CustomerBanksExternalControllerV1_getCustomerBanks operation.
 //
 // Endpoint to get customer banks.
 //
+// Deprecated: schema marks this operation as deprecated.
+//
 // GET /external/v1/customer-banks
-func (c *Client) CustomerBanksExternalControllerGetCustomerBanks(ctx context.Context, params CustomerBanksExternalControllerGetCustomerBanksParams) ([]CustomerBankDto, error) {
-	res, err := c.sendCustomerBanksExternalControllerGetCustomerBanks(ctx, params)
+func (c *Client) CustomerBanksExternalControllerV1GetCustomerBanks(ctx context.Context, params CustomerBanksExternalControllerV1GetCustomerBanksParams) ([]CustomerBankDto, error) {
+	res, err := c.sendCustomerBanksExternalControllerV1GetCustomerBanks(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendCustomerBanksExternalControllerGetCustomerBanks(ctx context.Context, params CustomerBanksExternalControllerGetCustomerBanksParams) (res []CustomerBankDto, err error) {
+func (c *Client) sendCustomerBanksExternalControllerV1GetCustomerBanks(ctx context.Context, params CustomerBanksExternalControllerV1GetCustomerBanksParams) (res []CustomerBankDto, err error) {
 
 	u := uri.Clone(c.requestURL(ctx))
 	var pathParts [1]string
@@ -587,7 +621,7 @@ func (c *Client) sendCustomerBanksExternalControllerGetCustomerBanks(ctx context
 		var satisfied bitset
 		{
 
-			switch err := c.securityBearer(ctx, CustomerBanksExternalControllerGetCustomerBanksOperation, r); {
+			switch err := c.securityBearer(ctx, CustomerBanksExternalControllerV1GetCustomerBanksOperation, r); {
 			case err == nil: // if NO error
 				satisfied[0] |= 1 << 0
 			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
@@ -621,7 +655,253 @@ func (c *Client) sendCustomerBanksExternalControllerGetCustomerBanks(ctx context
 	}
 	defer resp.Body.Close()
 
-	result, err := decodeCustomerBanksExternalControllerGetCustomerBanksResponse(resp)
+	result, err := decodeCustomerBanksExternalControllerV1GetCustomerBanksResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// CustomerBanksExternalControllerV2GetCustomerBanksV2 invokes CustomerBanksExternalControllerV2_getCustomerBanksV2 operation.
+//
+// Endpoint to get customer banks.
+//
+// GET /external/v2/customer-banks
+func (c *Client) CustomerBanksExternalControllerV2GetCustomerBanksV2(ctx context.Context, params CustomerBanksExternalControllerV2GetCustomerBanksV2Params) ([]CustomerBankDto, error) {
+	res, err := c.sendCustomerBanksExternalControllerV2GetCustomerBanksV2(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendCustomerBanksExternalControllerV2GetCustomerBanksV2(ctx context.Context, params CustomerBanksExternalControllerV2GetCustomerBanksV2Params) (res []CustomerBankDto, err error) {
+
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/external/v2/customer-banks"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "withLastUsed" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "withLastUsed",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.WithLastUsed.Get(); ok {
+				return e.EncodeValue(conv.BoolToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "withDeleted" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "withDeleted",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.WithDeleted.Get(); ok {
+				return e.EncodeValue(conv.BoolToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "accountType" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "accountType",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.AccountType.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+
+			switch err := c.securityBearer(ctx, CustomerBanksExternalControllerV2GetCustomerBanksV2Operation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"Bearer\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	defer resp.Body.Close()
+
+	result, err := decodeCustomerBanksExternalControllerV2GetCustomerBanksV2Response(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// CustomerBanksExternalControllerV2GetCustomerBanksV2Unmasked invokes CustomerBanksExternalControllerV2_getCustomerBanksV2Unmasked operation.
+//
+// Endpoint to get customer banks with bank account number unmasked.
+//
+// GET /external/v2/customer-banks/unmasked
+func (c *Client) CustomerBanksExternalControllerV2GetCustomerBanksV2Unmasked(ctx context.Context, params CustomerBanksExternalControllerV2GetCustomerBanksV2UnmaskedParams) ([]CustomerBankDto, error) {
+	res, err := c.sendCustomerBanksExternalControllerV2GetCustomerBanksV2Unmasked(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendCustomerBanksExternalControllerV2GetCustomerBanksV2Unmasked(ctx context.Context, params CustomerBanksExternalControllerV2GetCustomerBanksV2UnmaskedParams) (res []CustomerBankDto, err error) {
+
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/external/v2/customer-banks/unmasked"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "withLastUsed" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "withLastUsed",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.WithLastUsed.Get(); ok {
+				return e.EncodeValue(conv.BoolToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "withDeleted" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "withDeleted",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.WithDeleted.Get(); ok {
+				return e.EncodeValue(conv.BoolToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "accountType" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "accountType",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.AccountType.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+
+			switch err := c.securityBearer(ctx, CustomerBanksExternalControllerV2GetCustomerBanksV2UnmaskedOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"Bearer\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	defer resp.Body.Close()
+
+	result, err := decodeCustomerBanksExternalControllerV2GetCustomerBanksV2UnmaskedResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -2031,9 +2311,9 @@ func (c *Client) sendFailedDepositSplitsExternalControllerGetFailedDepositSplits
 // Endpoint to delete bank by id.
 //
 // DELETE /external/v1/fast/customer-banks/{id}
-func (c *Client) FastExternalControllerDeleteCustomerBank(ctx context.Context, params FastExternalControllerDeleteCustomerBankParams) error {
-	_, err := c.sendFastExternalControllerDeleteCustomerBank(ctx, params)
-	return err
+func (c *Client) FastExternalControllerDeleteCustomerBank(ctx context.Context, params FastExternalControllerDeleteCustomerBankParams) (*CustomerBankDto, error) {
+	res, err := c.sendFastExternalControllerDeleteCustomerBank(ctx, params)
+	return res, err
 }
 
 func (c *Client) sendFastExternalControllerDeleteCustomerBank(ctx context.Context, params FastExternalControllerDeleteCustomerBankParams) (res *CustomerBankDto, err error) {
@@ -2437,6 +2717,73 @@ func (c *Client) sendIntergoalTransferRequestExternalControllerGetIntergoalTrans
 	defer resp.Body.Close()
 
 	result, err := decodeIntergoalTransferRequestExternalControllerGetIntergoalTransfersDurationResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// IntergoalTransferRequestInternalControllerCancel invokes IntergoalTransferRequestInternalController_cancel operation.
+//
+// Cancels an Intergoal Transfer Request.
+//
+// POST /internal/v1/intergoal-transfer-request/{id}/cancel
+func (c *Client) IntergoalTransferRequestInternalControllerCancel(ctx context.Context, request *CancelIntergoalTransferDTO, params IntergoalTransferRequestInternalControllerCancelParams) error {
+	_, err := c.sendIntergoalTransferRequestInternalControllerCancel(ctx, request, params)
+	return err
+}
+
+func (c *Client) sendIntergoalTransferRequestInternalControllerCancel(ctx context.Context, request *CancelIntergoalTransferDTO, params IntergoalTransferRequestInternalControllerCancelParams) (res *IntergoalTransferRequestInternalControllerCancelOK, err error) {
+	// Validate request before sending.
+	if err := func() error {
+		if err := request.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return res, errors.Wrap(err, "validate")
+	}
+
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/internal/v1/intergoal-transfer-request/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.StringToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/cancel"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeIntergoalTransferRequestInternalControllerCancelRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	defer resp.Body.Close()
+
+	result, err := decodeIntergoalTransferRequestInternalControllerCancelResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -3140,6 +3487,60 @@ func (c *Client) sendLeanExternalControllerGetOrCreateLeanCustomer(ctx context.C
 	defer resp.Body.Close()
 
 	result, err := decodeLeanExternalControllerGetOrCreateLeanCustomerResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// LeanInternalControllerGetLeanUserByAccountUuid invokes LeanInternalController_getLeanUserByAccountUuid operation.
+//
+// Endpoint to get LEAN customer.
+//
+// GET /internal/v1/lean/user/{accountUuid}
+func (c *Client) LeanInternalControllerGetLeanUserByAccountUuid(ctx context.Context, params LeanInternalControllerGetLeanUserByAccountUuidParams) (*LeanCustomer, error) {
+	res, err := c.sendLeanInternalControllerGetLeanUserByAccountUuid(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendLeanInternalControllerGetLeanUserByAccountUuid(ctx context.Context, params LeanInternalControllerGetLeanUserByAccountUuidParams) (res *LeanCustomer, err error) {
+
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/internal/v1/lean/user/"
+	{
+		// Encode "accountUuid" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "accountUuid",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.StringToString(params.AccountUuid))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	defer resp.Body.Close()
+
+	result, err := decodeLeanInternalControllerGetLeanUserByAccountUuidResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -4012,6 +4413,216 @@ func (c *Client) sendSrsInternalControllerGetSrsTransferRequestsWithSubTransfers
 	return result, nil
 }
 
+// WithdrawalsExternalControllerGetWithdrawalById invokes WithdrawalsExternalController_getWithdrawalById operation.
+//
+// Retrieves a withdrawal record by its UUID.
+//
+// GET /external/v1/transactions/withdrawal/{uuid}
+func (c *Client) WithdrawalsExternalControllerGetWithdrawalById(ctx context.Context, params WithdrawalsExternalControllerGetWithdrawalByIdParams) (WithdrawalsExternalControllerGetWithdrawalByIdRes, error) {
+	res, err := c.sendWithdrawalsExternalControllerGetWithdrawalById(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendWithdrawalsExternalControllerGetWithdrawalById(ctx context.Context, params WithdrawalsExternalControllerGetWithdrawalByIdParams) (res WithdrawalsExternalControllerGetWithdrawalByIdRes, err error) {
+
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/external/v1/transactions/withdrawal/"
+	{
+		// Encode "uuid" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "uuid",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.StringToString(params.UUID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+
+			switch err := c.securityBearer(ctx, WithdrawalsExternalControllerGetWithdrawalByIdOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"Bearer\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	defer resp.Body.Close()
+
+	result, err := decodeWithdrawalsExternalControllerGetWithdrawalByIdResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// WithdrawalsExternalControllerListWithdrawalsByAccount invokes WithdrawalsExternalController_listWithdrawalsByAccount operation.
+//
+// Retrieves withdrawal records for a specific account with pagination support.
+//
+// GET /external/v1/transactions/withdrawal
+func (c *Client) WithdrawalsExternalControllerListWithdrawalsByAccount(ctx context.Context, params WithdrawalsExternalControllerListWithdrawalsByAccountParams) (WithdrawalsExternalControllerListWithdrawalsByAccountRes, error) {
+	res, err := c.sendWithdrawalsExternalControllerListWithdrawalsByAccount(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendWithdrawalsExternalControllerListWithdrawalsByAccount(ctx context.Context, params WithdrawalsExternalControllerListWithdrawalsByAccountParams) (res WithdrawalsExternalControllerListWithdrawalsByAccountRes, err error) {
+
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/external/v1/transactions/withdrawal"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "page" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "page",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Page.Get(); ok {
+				return e.EncodeValue(conv.Float64ToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "limit" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "limit",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Limit.Get(); ok {
+				return e.EncodeValue(conv.Float64ToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "portfolioUuid" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "portfolioUuid",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.PortfolioUuid.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+
+			switch err := c.securityBearer(ctx, WithdrawalsExternalControllerListWithdrawalsByAccountOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"Bearer\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	defer resp.Body.Close()
+
+	result, err := decodeWithdrawalsExternalControllerListWithdrawalsByAccountResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
 // WithdrawalsExternalControllerSubmitWithdrawalRequests invokes WithdrawalsExternalController_submitWithdrawalRequests operation.
 //
 // POST /external/v1/transactions/withdrawal/submit
@@ -4091,6 +4702,75 @@ func (c *Client) sendWithdrawalsExternalControllerSubmitWithdrawalRequests(ctx c
 	return result, nil
 }
 
+// WithdrawalsInternalControllerAllowedCurrencies invokes WithdrawalsInternalController_allowedCurrencies operation.
+//
+// GET /internal/v1/transactions/withdrawal/allowed-currencies/{userId}
+func (c *Client) WithdrawalsInternalControllerAllowedCurrencies(ctx context.Context, params WithdrawalsInternalControllerAllowedCurrenciesParams) ([]string, error) {
+	res, err := c.sendWithdrawalsInternalControllerAllowedCurrencies(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendWithdrawalsInternalControllerAllowedCurrencies(ctx context.Context, params WithdrawalsInternalControllerAllowedCurrenciesParams) (res []string, err error) {
+
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/internal/v1/transactions/withdrawal/allowed-currencies/"
+	{
+		// Encode "userId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "userId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.StringToString(params.UserId))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "goalType" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "goalType",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			return e.EncodeValue(conv.StringToString(params.GoalType))
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	defer resp.Body.Close()
+
+	result, err := decodeWithdrawalsInternalControllerAllowedCurrenciesResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
 // WithdrawalsInternalControllerBatchApproveFlaggedWithdrawals invokes WithdrawalsInternalController_batchApproveFlaggedWithdrawals operation.
 //
 // POST /internal/v1/transactions/withdrawal/batch-approve-flagged-withdrawals
@@ -4130,6 +4810,233 @@ func (c *Client) sendWithdrawalsInternalControllerBatchApproveFlaggedWithdrawals
 	defer resp.Body.Close()
 
 	result, err := decodeWithdrawalsInternalControllerBatchApproveFlaggedWithdrawalsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// WithdrawalsInternalControllerCreateWithdrawal invokes WithdrawalsInternalController_createWithdrawal operation.
+//
+// Creates a new withdrawal record with the provided details. This endpoint is just creating the
+// entity (should only be called by withdrawal workflow).
+//
+// POST /internal/v1/transactions/withdrawal
+func (c *Client) WithdrawalsInternalControllerCreateWithdrawal(ctx context.Context, request *CreateWithdrawalBodyInternalDTO) (WithdrawalsInternalControllerCreateWithdrawalRes, error) {
+	res, err := c.sendWithdrawalsInternalControllerCreateWithdrawal(ctx, request)
+	return res, err
+}
+
+func (c *Client) sendWithdrawalsInternalControllerCreateWithdrawal(ctx context.Context, request *CreateWithdrawalBodyInternalDTO) (res WithdrawalsInternalControllerCreateWithdrawalRes, err error) {
+	// Validate request before sending.
+	if err := func() error {
+		if err := request.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return res, errors.Wrap(err, "validate")
+	}
+
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/internal/v1/transactions/withdrawal"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeWithdrawalsInternalControllerCreateWithdrawalRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	defer resp.Body.Close()
+
+	result, err := decodeWithdrawalsInternalControllerCreateWithdrawalResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// WithdrawalsInternalControllerGetWithdrawalById invokes WithdrawalsInternalController_getWithdrawalById operation.
+//
+// Retrieves a withdrawal record by its UUID.
+//
+// GET /internal/v1/transactions/withdrawal/{uuid}
+func (c *Client) WithdrawalsInternalControllerGetWithdrawalById(ctx context.Context, params WithdrawalsInternalControllerGetWithdrawalByIdParams) (WithdrawalsInternalControllerGetWithdrawalByIdRes, error) {
+	res, err := c.sendWithdrawalsInternalControllerGetWithdrawalById(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendWithdrawalsInternalControllerGetWithdrawalById(ctx context.Context, params WithdrawalsInternalControllerGetWithdrawalByIdParams) (res WithdrawalsInternalControllerGetWithdrawalByIdRes, err error) {
+
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/internal/v1/transactions/withdrawal/"
+	{
+		// Encode "uuid" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "uuid",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.StringToString(params.UUID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "accountUuid" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "accountUuid",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.AccountUuid.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	defer resp.Body.Close()
+
+	result, err := decodeWithdrawalsInternalControllerGetWithdrawalByIdResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// WithdrawalsInternalControllerListWithdrawalsByAccount invokes WithdrawalsInternalController_listWithdrawalsByAccount operation.
+//
+// Retrieves withdrawal records for a specific account with pagination support.
+//
+// GET /internal/v1/transactions/withdrawal
+func (c *Client) WithdrawalsInternalControllerListWithdrawalsByAccount(ctx context.Context, params WithdrawalsInternalControllerListWithdrawalsByAccountParams) (WithdrawalsInternalControllerListWithdrawalsByAccountRes, error) {
+	res, err := c.sendWithdrawalsInternalControllerListWithdrawalsByAccount(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendWithdrawalsInternalControllerListWithdrawalsByAccount(ctx context.Context, params WithdrawalsInternalControllerListWithdrawalsByAccountParams) (res WithdrawalsInternalControllerListWithdrawalsByAccountRes, err error) {
+
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/internal/v1/transactions/withdrawal"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "page" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "page",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Page.Get(); ok {
+				return e.EncodeValue(conv.Float64ToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "limit" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "limit",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Limit.Get(); ok {
+				return e.EncodeValue(conv.Float64ToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "portfolioUuid" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "portfolioUuid",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.PortfolioUuid.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "accountUuid" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "accountUuid",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			return e.EncodeValue(conv.StringToString(params.AccountUuid))
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	defer resp.Body.Close()
+
+	result, err := decodeWithdrawalsInternalControllerListWithdrawalsByAccountResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}

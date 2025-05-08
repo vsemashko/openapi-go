@@ -7,6 +7,6 @@ specs_dir: "./external/sdk/sdk-packages"
 output_dir: "./generated"
 
 # Regex pattern to filter services
-target_services: "(funding-server-sdk|holidays-server-sdk|customer-data-sdk)"
+target_services: "(funding-server-sdk|holidays-server-sdk)"
 
 # You can add more configuration options here as needed 

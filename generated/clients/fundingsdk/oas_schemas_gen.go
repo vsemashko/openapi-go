@@ -106,7 +106,7 @@ type AnonymizationControllerAnonymizePiiNoContent struct{}
 // Ref: #/components/schemas/AnonymizePiiRequestDTO
 type AnonymizePiiRequestDTO struct {
 	DeletionRequestID string                     `json:"deletion_request_id"`
-	User              AnonymizePiiRequestDTOUser `json:"user"`
+	User              AnonymizePiiUserRequestDto `json:"user"`
 }
 
 // GetDeletionRequestID returns the value of DeletionRequestID.
@@ -115,7 +115,7 @@ func (s *AnonymizePiiRequestDTO) GetDeletionRequestID() string {
 }
 
 // GetUser returns the value of User.
-func (s *AnonymizePiiRequestDTO) GetUser() AnonymizePiiRequestDTOUser {
+func (s *AnonymizePiiRequestDTO) GetUser() AnonymizePiiUserRequestDto {
 	return s.User
 }
 
@@ -125,11 +125,12 @@ func (s *AnonymizePiiRequestDTO) SetDeletionRequestID(val string) {
 }
 
 // SetUser sets the value of User.
-func (s *AnonymizePiiRequestDTO) SetUser(val AnonymizePiiRequestDTOUser) {
+func (s *AnonymizePiiRequestDTO) SetUser(val AnonymizePiiUserRequestDto) {
 	s.User = val
 }
 
-type AnonymizePiiRequestDTOUser struct {
+// Ref: #/components/schemas/AnonymizePiiUserRequestDto
+type AnonymizePiiUserRequestDto struct {
 	UserID     string `json:"user_id"`
 	CustomerID string `json:"customer_id"`
 	AccountID  string `json:"account_id"`
@@ -137,42 +138,42 @@ type AnonymizePiiRequestDTOUser struct {
 }
 
 // GetUserID returns the value of UserID.
-func (s *AnonymizePiiRequestDTOUser) GetUserID() string {
+func (s *AnonymizePiiUserRequestDto) GetUserID() string {
 	return s.UserID
 }
 
 // GetCustomerID returns the value of CustomerID.
-func (s *AnonymizePiiRequestDTOUser) GetCustomerID() string {
+func (s *AnonymizePiiUserRequestDto) GetCustomerID() string {
 	return s.CustomerID
 }
 
 // GetAccountID returns the value of AccountID.
-func (s *AnonymizePiiRequestDTOUser) GetAccountID() string {
+func (s *AnonymizePiiUserRequestDto) GetAccountID() string {
 	return s.AccountID
 }
 
 // GetEmail returns the value of Email.
-func (s *AnonymizePiiRequestDTOUser) GetEmail() string {
+func (s *AnonymizePiiUserRequestDto) GetEmail() string {
 	return s.Email
 }
 
 // SetUserID sets the value of UserID.
-func (s *AnonymizePiiRequestDTOUser) SetUserID(val string) {
+func (s *AnonymizePiiUserRequestDto) SetUserID(val string) {
 	s.UserID = val
 }
 
 // SetCustomerID sets the value of CustomerID.
-func (s *AnonymizePiiRequestDTOUser) SetCustomerID(val string) {
+func (s *AnonymizePiiUserRequestDto) SetCustomerID(val string) {
 	s.CustomerID = val
 }
 
 // SetAccountID sets the value of AccountID.
-func (s *AnonymizePiiRequestDTOUser) SetAccountID(val string) {
+func (s *AnonymizePiiUserRequestDto) SetAccountID(val string) {
 	s.AccountID = val
 }
 
 // SetEmail sets the value of Email.
-func (s *AnonymizePiiRequestDTOUser) SetEmail(val string) {
+func (s *AnonymizePiiUserRequestDto) SetEmail(val string) {
 	s.Email = val
 }
 
@@ -469,6 +470,46 @@ func (s *Bearer) GetToken() string {
 // SetToken sets the value of Token.
 func (s *Bearer) SetToken(val string) {
 	s.Token = val
+}
+
+// Ref: #/components/schemas/CancelIntergoalTransferDTO
+type CancelIntergoalTransferDTO struct {
+	// The account ID of the user initiating the transfer request.
+	AccountId string `json:"accountId"`
+	// The ID of the portfolio from which the transfer is initiated.
+	FromPortfolioId string `json:"fromPortfolioId"`
+	// The reason for canceling the transfer request.
+	Reason string `json:"reason"`
+}
+
+// GetAccountId returns the value of AccountId.
+func (s *CancelIntergoalTransferDTO) GetAccountId() string {
+	return s.AccountId
+}
+
+// GetFromPortfolioId returns the value of FromPortfolioId.
+func (s *CancelIntergoalTransferDTO) GetFromPortfolioId() string {
+	return s.FromPortfolioId
+}
+
+// GetReason returns the value of Reason.
+func (s *CancelIntergoalTransferDTO) GetReason() string {
+	return s.Reason
+}
+
+// SetAccountId sets the value of AccountId.
+func (s *CancelIntergoalTransferDTO) SetAccountId(val string) {
+	s.AccountId = val
+}
+
+// SetFromPortfolioId sets the value of FromPortfolioId.
+func (s *CancelIntergoalTransferDTO) SetFromPortfolioId(val string) {
+	s.FromPortfolioId = val
+}
+
+// SetReason sets the value of Reason.
+func (s *CancelIntergoalTransferDTO) SetReason(val string) {
+	s.Reason = val
 }
 
 // Ref: #/components/schemas/CancellationCallbackDto
@@ -1116,8 +1157,643 @@ func (s *CreateDepositScheduleRequestDtoScheduleType) UnmarshalText(data []byte)
 // Ref: #/components/schemas/CreateWhitelistedCustomerBankRequestDto
 type CreateWhitelistedCustomerBankRequestDto struct{}
 
+// Ref: #/components/schemas/CreateWithdrawalBodyInternalDTO
+type CreateWithdrawalBodyInternalDTO struct {
+	// Primary key UUID for the withdrawal request, provided by the client.
+	UUID string `json:"uuid"`
+	// UUID of the portfolio from which the withdrawal is made.
+	PortfolioUuid string `json:"portfolioUuid"`
+	// Type of the portfolio from which the withdrawal is made.
+	PortfolioType CreateWithdrawalBodyInternalDTOPortfolioType `json:"portfolioType"`
+	// Legacy MongoDB ID of the customer bank account receiving the withdrawal.
+	CustomerBankLegacyId string `json:"customerBankLegacyId"`
+	// Amount requested for withdrawal.
+	RequestedAmount float64 `json:"requestedAmount"`
+	// Currency code of the requested withdrawal amount.
+	RequestedCurrency string `json:"requestedCurrency"`
+	// Reason for the withdrawal, provided by the user or system.
+	Reason OptString `json:"reason"`
+	// Withdrawal type.
+	Type CreateWithdrawalBodyInternalDTOType `json:"type"`
+	// Indicates whether the withdrawal is for a partial or full redemption of the portfolio.
+	RequestedRedemptionExtent CreateWithdrawalBodyInternalDTORequestedRedemptionExtent `json:"requestedRedemptionExtent"`
+	// Additional notes or comments about the withdrawal.
+	Comment OptString `json:"comment"`
+	// UUID of the account initiating the withdrawal.
+	AccountUuid string `json:"accountUuid"`
+}
+
+// GetUUID returns the value of UUID.
+func (s *CreateWithdrawalBodyInternalDTO) GetUUID() string {
+	return s.UUID
+}
+
+// GetPortfolioUuid returns the value of PortfolioUuid.
+func (s *CreateWithdrawalBodyInternalDTO) GetPortfolioUuid() string {
+	return s.PortfolioUuid
+}
+
+// GetPortfolioType returns the value of PortfolioType.
+func (s *CreateWithdrawalBodyInternalDTO) GetPortfolioType() CreateWithdrawalBodyInternalDTOPortfolioType {
+	return s.PortfolioType
+}
+
+// GetCustomerBankLegacyId returns the value of CustomerBankLegacyId.
+func (s *CreateWithdrawalBodyInternalDTO) GetCustomerBankLegacyId() string {
+	return s.CustomerBankLegacyId
+}
+
+// GetRequestedAmount returns the value of RequestedAmount.
+func (s *CreateWithdrawalBodyInternalDTO) GetRequestedAmount() float64 {
+	return s.RequestedAmount
+}
+
+// GetRequestedCurrency returns the value of RequestedCurrency.
+func (s *CreateWithdrawalBodyInternalDTO) GetRequestedCurrency() string {
+	return s.RequestedCurrency
+}
+
+// GetReason returns the value of Reason.
+func (s *CreateWithdrawalBodyInternalDTO) GetReason() OptString {
+	return s.Reason
+}
+
+// GetType returns the value of Type.
+func (s *CreateWithdrawalBodyInternalDTO) GetType() CreateWithdrawalBodyInternalDTOType {
+	return s.Type
+}
+
+// GetRequestedRedemptionExtent returns the value of RequestedRedemptionExtent.
+func (s *CreateWithdrawalBodyInternalDTO) GetRequestedRedemptionExtent() CreateWithdrawalBodyInternalDTORequestedRedemptionExtent {
+	return s.RequestedRedemptionExtent
+}
+
+// GetComment returns the value of Comment.
+func (s *CreateWithdrawalBodyInternalDTO) GetComment() OptString {
+	return s.Comment
+}
+
+// GetAccountUuid returns the value of AccountUuid.
+func (s *CreateWithdrawalBodyInternalDTO) GetAccountUuid() string {
+	return s.AccountUuid
+}
+
+// SetUUID sets the value of UUID.
+func (s *CreateWithdrawalBodyInternalDTO) SetUUID(val string) {
+	s.UUID = val
+}
+
+// SetPortfolioUuid sets the value of PortfolioUuid.
+func (s *CreateWithdrawalBodyInternalDTO) SetPortfolioUuid(val string) {
+	s.PortfolioUuid = val
+}
+
+// SetPortfolioType sets the value of PortfolioType.
+func (s *CreateWithdrawalBodyInternalDTO) SetPortfolioType(val CreateWithdrawalBodyInternalDTOPortfolioType) {
+	s.PortfolioType = val
+}
+
+// SetCustomerBankLegacyId sets the value of CustomerBankLegacyId.
+func (s *CreateWithdrawalBodyInternalDTO) SetCustomerBankLegacyId(val string) {
+	s.CustomerBankLegacyId = val
+}
+
+// SetRequestedAmount sets the value of RequestedAmount.
+func (s *CreateWithdrawalBodyInternalDTO) SetRequestedAmount(val float64) {
+	s.RequestedAmount = val
+}
+
+// SetRequestedCurrency sets the value of RequestedCurrency.
+func (s *CreateWithdrawalBodyInternalDTO) SetRequestedCurrency(val string) {
+	s.RequestedCurrency = val
+}
+
+// SetReason sets the value of Reason.
+func (s *CreateWithdrawalBodyInternalDTO) SetReason(val OptString) {
+	s.Reason = val
+}
+
+// SetType sets the value of Type.
+func (s *CreateWithdrawalBodyInternalDTO) SetType(val CreateWithdrawalBodyInternalDTOType) {
+	s.Type = val
+}
+
+// SetRequestedRedemptionExtent sets the value of RequestedRedemptionExtent.
+func (s *CreateWithdrawalBodyInternalDTO) SetRequestedRedemptionExtent(val CreateWithdrawalBodyInternalDTORequestedRedemptionExtent) {
+	s.RequestedRedemptionExtent = val
+}
+
+// SetComment sets the value of Comment.
+func (s *CreateWithdrawalBodyInternalDTO) SetComment(val OptString) {
+	s.Comment = val
+}
+
+// SetAccountUuid sets the value of AccountUuid.
+func (s *CreateWithdrawalBodyInternalDTO) SetAccountUuid(val string) {
+	s.AccountUuid = val
+}
+
+// Type of the portfolio from which the withdrawal is made.
+type CreateWithdrawalBodyInternalDTOPortfolioType string
+
+const (
+	CreateWithdrawalBodyInternalDTOPortfolioTypeRETIREMENT       CreateWithdrawalBodyInternalDTOPortfolioType = "RETIREMENT"
+	CreateWithdrawalBodyInternalDTOPortfolioTypeBUYAHOME         CreateWithdrawalBodyInternalDTOPortfolioType = "BUY_A_HOME"
+	CreateWithdrawalBodyInternalDTOPortfolioTypeCHILDEDUCATION   CreateWithdrawalBodyInternalDTOPortfolioType = "CHILD_EDUCATION"
+	CreateWithdrawalBodyInternalDTOPortfolioTypeEMERGENCYFUND    CreateWithdrawalBodyInternalDTOPortfolioType = "EMERGENCY_FUND"
+	CreateWithdrawalBodyInternalDTOPortfolioTypeSTARTBUSINESS    CreateWithdrawalBodyInternalDTOPortfolioType = "START_BUSINESS"
+	CreateWithdrawalBodyInternalDTOPortfolioTypeVEHICLE          CreateWithdrawalBodyInternalDTOPortfolioType = "VEHICLE"
+	CreateWithdrawalBodyInternalDTOPortfolioTypeWEDDING          CreateWithdrawalBodyInternalDTOPortfolioType = "WEDDING"
+	CreateWithdrawalBodyInternalDTOPortfolioTypeTRAVEL           CreateWithdrawalBodyInternalDTOPortfolioType = "TRAVEL"
+	CreateWithdrawalBodyInternalDTOPortfolioTypeGENERALINVESTING CreateWithdrawalBodyInternalDTOPortfolioType = "GENERAL_INVESTING"
+	CreateWithdrawalBodyInternalDTOPortfolioTypeINCOME           CreateWithdrawalBodyInternalDTOPortfolioType = "INCOME"
+	CreateWithdrawalBodyInternalDTOPortfolioTypeMMF              CreateWithdrawalBodyInternalDTOPortfolioType = "MMF"
+	CreateWithdrawalBodyInternalDTOPortfolioTypeCPFISOA          CreateWithdrawalBodyInternalDTOPortfolioType = "CPFISOA"
+	CreateWithdrawalBodyInternalDTOPortfolioTypeTHEMETECH        CreateWithdrawalBodyInternalDTOPortfolioType = "THEME_TECH"
+	CreateWithdrawalBodyInternalDTOPortfolioTypeTHEMECONSUMER    CreateWithdrawalBodyInternalDTOPortfolioType = "THEME_CONSUMER"
+	CreateWithdrawalBodyInternalDTOPortfolioTypeTHEMEHEALTHCARE  CreateWithdrawalBodyInternalDTOPortfolioType = "THEME_HEALTHCARE"
+	CreateWithdrawalBodyInternalDTOPortfolioTypeTHEMEENVIRONMENT CreateWithdrawalBodyInternalDTOPortfolioType = "THEME_ENVIRONMENT"
+	CreateWithdrawalBodyInternalDTOPortfolioTypeESG              CreateWithdrawalBodyInternalDTOPortfolioType = "ESG"
+	CreateWithdrawalBodyInternalDTOPortfolioTypeCUSTOM           CreateWithdrawalBodyInternalDTOPortfolioType = "CUSTOM"
+	CreateWithdrawalBodyInternalDTOPortfolioTypeCRYPTOYIELD      CreateWithdrawalBodyInternalDTOPortfolioType = "CRYPTO_YIELD"
+	CreateWithdrawalBodyInternalDTOPortfolioTypeBLACKROCK        CreateWithdrawalBodyInternalDTOPortfolioType = "BLACKROCK"
+	CreateWithdrawalBodyInternalDTOPortfolioTypeSIMPLEPLUS       CreateWithdrawalBodyInternalDTOPortfolioType = "SIMPLEPLUS"
+)
+
+// AllValues returns all CreateWithdrawalBodyInternalDTOPortfolioType values.
+func (CreateWithdrawalBodyInternalDTOPortfolioType) AllValues() []CreateWithdrawalBodyInternalDTOPortfolioType {
+	return []CreateWithdrawalBodyInternalDTOPortfolioType{
+		CreateWithdrawalBodyInternalDTOPortfolioTypeRETIREMENT,
+		CreateWithdrawalBodyInternalDTOPortfolioTypeBUYAHOME,
+		CreateWithdrawalBodyInternalDTOPortfolioTypeCHILDEDUCATION,
+		CreateWithdrawalBodyInternalDTOPortfolioTypeEMERGENCYFUND,
+		CreateWithdrawalBodyInternalDTOPortfolioTypeSTARTBUSINESS,
+		CreateWithdrawalBodyInternalDTOPortfolioTypeVEHICLE,
+		CreateWithdrawalBodyInternalDTOPortfolioTypeWEDDING,
+		CreateWithdrawalBodyInternalDTOPortfolioTypeTRAVEL,
+		CreateWithdrawalBodyInternalDTOPortfolioTypeGENERALINVESTING,
+		CreateWithdrawalBodyInternalDTOPortfolioTypeINCOME,
+		CreateWithdrawalBodyInternalDTOPortfolioTypeMMF,
+		CreateWithdrawalBodyInternalDTOPortfolioTypeCPFISOA,
+		CreateWithdrawalBodyInternalDTOPortfolioTypeTHEMETECH,
+		CreateWithdrawalBodyInternalDTOPortfolioTypeTHEMECONSUMER,
+		CreateWithdrawalBodyInternalDTOPortfolioTypeTHEMEHEALTHCARE,
+		CreateWithdrawalBodyInternalDTOPortfolioTypeTHEMEENVIRONMENT,
+		CreateWithdrawalBodyInternalDTOPortfolioTypeESG,
+		CreateWithdrawalBodyInternalDTOPortfolioTypeCUSTOM,
+		CreateWithdrawalBodyInternalDTOPortfolioTypeCRYPTOYIELD,
+		CreateWithdrawalBodyInternalDTOPortfolioTypeBLACKROCK,
+		CreateWithdrawalBodyInternalDTOPortfolioTypeSIMPLEPLUS,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s CreateWithdrawalBodyInternalDTOPortfolioType) MarshalText() ([]byte, error) {
+	switch s {
+	case CreateWithdrawalBodyInternalDTOPortfolioTypeRETIREMENT:
+		return []byte(s), nil
+	case CreateWithdrawalBodyInternalDTOPortfolioTypeBUYAHOME:
+		return []byte(s), nil
+	case CreateWithdrawalBodyInternalDTOPortfolioTypeCHILDEDUCATION:
+		return []byte(s), nil
+	case CreateWithdrawalBodyInternalDTOPortfolioTypeEMERGENCYFUND:
+		return []byte(s), nil
+	case CreateWithdrawalBodyInternalDTOPortfolioTypeSTARTBUSINESS:
+		return []byte(s), nil
+	case CreateWithdrawalBodyInternalDTOPortfolioTypeVEHICLE:
+		return []byte(s), nil
+	case CreateWithdrawalBodyInternalDTOPortfolioTypeWEDDING:
+		return []byte(s), nil
+	case CreateWithdrawalBodyInternalDTOPortfolioTypeTRAVEL:
+		return []byte(s), nil
+	case CreateWithdrawalBodyInternalDTOPortfolioTypeGENERALINVESTING:
+		return []byte(s), nil
+	case CreateWithdrawalBodyInternalDTOPortfolioTypeINCOME:
+		return []byte(s), nil
+	case CreateWithdrawalBodyInternalDTOPortfolioTypeMMF:
+		return []byte(s), nil
+	case CreateWithdrawalBodyInternalDTOPortfolioTypeCPFISOA:
+		return []byte(s), nil
+	case CreateWithdrawalBodyInternalDTOPortfolioTypeTHEMETECH:
+		return []byte(s), nil
+	case CreateWithdrawalBodyInternalDTOPortfolioTypeTHEMECONSUMER:
+		return []byte(s), nil
+	case CreateWithdrawalBodyInternalDTOPortfolioTypeTHEMEHEALTHCARE:
+		return []byte(s), nil
+	case CreateWithdrawalBodyInternalDTOPortfolioTypeTHEMEENVIRONMENT:
+		return []byte(s), nil
+	case CreateWithdrawalBodyInternalDTOPortfolioTypeESG:
+		return []byte(s), nil
+	case CreateWithdrawalBodyInternalDTOPortfolioTypeCUSTOM:
+		return []byte(s), nil
+	case CreateWithdrawalBodyInternalDTOPortfolioTypeCRYPTOYIELD:
+		return []byte(s), nil
+	case CreateWithdrawalBodyInternalDTOPortfolioTypeBLACKROCK:
+		return []byte(s), nil
+	case CreateWithdrawalBodyInternalDTOPortfolioTypeSIMPLEPLUS:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *CreateWithdrawalBodyInternalDTOPortfolioType) UnmarshalText(data []byte) error {
+	switch CreateWithdrawalBodyInternalDTOPortfolioType(data) {
+	case CreateWithdrawalBodyInternalDTOPortfolioTypeRETIREMENT:
+		*s = CreateWithdrawalBodyInternalDTOPortfolioTypeRETIREMENT
+		return nil
+	case CreateWithdrawalBodyInternalDTOPortfolioTypeBUYAHOME:
+		*s = CreateWithdrawalBodyInternalDTOPortfolioTypeBUYAHOME
+		return nil
+	case CreateWithdrawalBodyInternalDTOPortfolioTypeCHILDEDUCATION:
+		*s = CreateWithdrawalBodyInternalDTOPortfolioTypeCHILDEDUCATION
+		return nil
+	case CreateWithdrawalBodyInternalDTOPortfolioTypeEMERGENCYFUND:
+		*s = CreateWithdrawalBodyInternalDTOPortfolioTypeEMERGENCYFUND
+		return nil
+	case CreateWithdrawalBodyInternalDTOPortfolioTypeSTARTBUSINESS:
+		*s = CreateWithdrawalBodyInternalDTOPortfolioTypeSTARTBUSINESS
+		return nil
+	case CreateWithdrawalBodyInternalDTOPortfolioTypeVEHICLE:
+		*s = CreateWithdrawalBodyInternalDTOPortfolioTypeVEHICLE
+		return nil
+	case CreateWithdrawalBodyInternalDTOPortfolioTypeWEDDING:
+		*s = CreateWithdrawalBodyInternalDTOPortfolioTypeWEDDING
+		return nil
+	case CreateWithdrawalBodyInternalDTOPortfolioTypeTRAVEL:
+		*s = CreateWithdrawalBodyInternalDTOPortfolioTypeTRAVEL
+		return nil
+	case CreateWithdrawalBodyInternalDTOPortfolioTypeGENERALINVESTING:
+		*s = CreateWithdrawalBodyInternalDTOPortfolioTypeGENERALINVESTING
+		return nil
+	case CreateWithdrawalBodyInternalDTOPortfolioTypeINCOME:
+		*s = CreateWithdrawalBodyInternalDTOPortfolioTypeINCOME
+		return nil
+	case CreateWithdrawalBodyInternalDTOPortfolioTypeMMF:
+		*s = CreateWithdrawalBodyInternalDTOPortfolioTypeMMF
+		return nil
+	case CreateWithdrawalBodyInternalDTOPortfolioTypeCPFISOA:
+		*s = CreateWithdrawalBodyInternalDTOPortfolioTypeCPFISOA
+		return nil
+	case CreateWithdrawalBodyInternalDTOPortfolioTypeTHEMETECH:
+		*s = CreateWithdrawalBodyInternalDTOPortfolioTypeTHEMETECH
+		return nil
+	case CreateWithdrawalBodyInternalDTOPortfolioTypeTHEMECONSUMER:
+		*s = CreateWithdrawalBodyInternalDTOPortfolioTypeTHEMECONSUMER
+		return nil
+	case CreateWithdrawalBodyInternalDTOPortfolioTypeTHEMEHEALTHCARE:
+		*s = CreateWithdrawalBodyInternalDTOPortfolioTypeTHEMEHEALTHCARE
+		return nil
+	case CreateWithdrawalBodyInternalDTOPortfolioTypeTHEMEENVIRONMENT:
+		*s = CreateWithdrawalBodyInternalDTOPortfolioTypeTHEMEENVIRONMENT
+		return nil
+	case CreateWithdrawalBodyInternalDTOPortfolioTypeESG:
+		*s = CreateWithdrawalBodyInternalDTOPortfolioTypeESG
+		return nil
+	case CreateWithdrawalBodyInternalDTOPortfolioTypeCUSTOM:
+		*s = CreateWithdrawalBodyInternalDTOPortfolioTypeCUSTOM
+		return nil
+	case CreateWithdrawalBodyInternalDTOPortfolioTypeCRYPTOYIELD:
+		*s = CreateWithdrawalBodyInternalDTOPortfolioTypeCRYPTOYIELD
+		return nil
+	case CreateWithdrawalBodyInternalDTOPortfolioTypeBLACKROCK:
+		*s = CreateWithdrawalBodyInternalDTOPortfolioTypeBLACKROCK
+		return nil
+	case CreateWithdrawalBodyInternalDTOPortfolioTypeSIMPLEPLUS:
+		*s = CreateWithdrawalBodyInternalDTOPortfolioTypeSIMPLEPLUS
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Indicates whether the withdrawal is for a partial or full redemption of the portfolio.
+type CreateWithdrawalBodyInternalDTORequestedRedemptionExtent string
+
+const (
+	CreateWithdrawalBodyInternalDTORequestedRedemptionExtentFULL    CreateWithdrawalBodyInternalDTORequestedRedemptionExtent = "FULL"
+	CreateWithdrawalBodyInternalDTORequestedRedemptionExtentPARTIAL CreateWithdrawalBodyInternalDTORequestedRedemptionExtent = "PARTIAL"
+)
+
+// AllValues returns all CreateWithdrawalBodyInternalDTORequestedRedemptionExtent values.
+func (CreateWithdrawalBodyInternalDTORequestedRedemptionExtent) AllValues() []CreateWithdrawalBodyInternalDTORequestedRedemptionExtent {
+	return []CreateWithdrawalBodyInternalDTORequestedRedemptionExtent{
+		CreateWithdrawalBodyInternalDTORequestedRedemptionExtentFULL,
+		CreateWithdrawalBodyInternalDTORequestedRedemptionExtentPARTIAL,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s CreateWithdrawalBodyInternalDTORequestedRedemptionExtent) MarshalText() ([]byte, error) {
+	switch s {
+	case CreateWithdrawalBodyInternalDTORequestedRedemptionExtentFULL:
+		return []byte(s), nil
+	case CreateWithdrawalBodyInternalDTORequestedRedemptionExtentPARTIAL:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *CreateWithdrawalBodyInternalDTORequestedRedemptionExtent) UnmarshalText(data []byte) error {
+	switch CreateWithdrawalBodyInternalDTORequestedRedemptionExtent(data) {
+	case CreateWithdrawalBodyInternalDTORequestedRedemptionExtentFULL:
+		*s = CreateWithdrawalBodyInternalDTORequestedRedemptionExtentFULL
+		return nil
+	case CreateWithdrawalBodyInternalDTORequestedRedemptionExtentPARTIAL:
+		*s = CreateWithdrawalBodyInternalDTORequestedRedemptionExtentPARTIAL
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Withdrawal type.
+type CreateWithdrawalBodyInternalDTOType string
+
+const (
+	CreateWithdrawalBodyInternalDTOTypeAUTOPAYOUTWITHDRAWAL CreateWithdrawalBodyInternalDTOType = "AUTO_PAYOUT_WITHDRAWAL"
+	CreateWithdrawalBodyInternalDTOTypeWITHDRAWALBYCUSTOMER CreateWithdrawalBodyInternalDTOType = "WITHDRAWAL_BY_CUSTOMER"
+	CreateWithdrawalBodyInternalDTOTypeWITHDRAWALBYOPS      CreateWithdrawalBodyInternalDTOType = "WITHDRAWAL_BY_OPS"
+)
+
+// AllValues returns all CreateWithdrawalBodyInternalDTOType values.
+func (CreateWithdrawalBodyInternalDTOType) AllValues() []CreateWithdrawalBodyInternalDTOType {
+	return []CreateWithdrawalBodyInternalDTOType{
+		CreateWithdrawalBodyInternalDTOTypeAUTOPAYOUTWITHDRAWAL,
+		CreateWithdrawalBodyInternalDTOTypeWITHDRAWALBYCUSTOMER,
+		CreateWithdrawalBodyInternalDTOTypeWITHDRAWALBYOPS,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s CreateWithdrawalBodyInternalDTOType) MarshalText() ([]byte, error) {
+	switch s {
+	case CreateWithdrawalBodyInternalDTOTypeAUTOPAYOUTWITHDRAWAL:
+		return []byte(s), nil
+	case CreateWithdrawalBodyInternalDTOTypeWITHDRAWALBYCUSTOMER:
+		return []byte(s), nil
+	case CreateWithdrawalBodyInternalDTOTypeWITHDRAWALBYOPS:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *CreateWithdrawalBodyInternalDTOType) UnmarshalText(data []byte) error {
+	switch CreateWithdrawalBodyInternalDTOType(data) {
+	case CreateWithdrawalBodyInternalDTOTypeAUTOPAYOUTWITHDRAWAL:
+		*s = CreateWithdrawalBodyInternalDTOTypeAUTOPAYOUTWITHDRAWAL
+		return nil
+	case CreateWithdrawalBodyInternalDTOTypeWITHDRAWALBYCUSTOMER:
+		*s = CreateWithdrawalBodyInternalDTOTypeWITHDRAWALBYCUSTOMER
+		return nil
+	case CreateWithdrawalBodyInternalDTOTypeWITHDRAWALBYOPS:
+		*s = CreateWithdrawalBodyInternalDTOTypeWITHDRAWALBYOPS
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Ref: #/components/schemas/CreateWithdrawalResponseDTO
+type CreateWithdrawalResponseDTO struct {
+	// The created withdrawal entity.
+	Data Withdrawal `json:"data"`
+}
+
+// GetData returns the value of Data.
+func (s *CreateWithdrawalResponseDTO) GetData() Withdrawal {
+	return s.Data
+}
+
+// SetData sets the value of Data.
+func (s *CreateWithdrawalResponseDTO) SetData(val Withdrawal) {
+	s.Data = val
+}
+
+func (*CreateWithdrawalResponseDTO) withdrawalsInternalControllerCreateWithdrawalRes() {}
+
+// Ref: #/components/schemas/CustomerBankAddress
+type CustomerBankAddress struct{}
+
 // Ref: #/components/schemas/CustomerBankDto
-type CustomerBankDto struct{}
+type CustomerBankDto struct {
+	ID                 string              `json:"id"`
+	LegacyId           string              `json:"legacyId"`
+	AccountUuid        string              `json:"accountUuid"`
+	MandateId          string              `json:"mandateId"`
+	BeneficiaryName    string              `json:"beneficiaryName"`
+	AccountNumber      string              `json:"accountNumber"`
+	Name               string              `json:"name"`
+	Currency           string              `json:"currency"`
+	Address            CustomerBankAddress `json:"address"`
+	BankCode           string              `json:"bankCode"`
+	BranchCode         string              `json:"branchCode"`
+	Swift              string              `json:"swift"`
+	ImageUrl           string              `json:"imageUrl"`
+	AccountType        string              `json:"accountType"`
+	Meta               CustomerBankDtoMeta `json:"meta"`
+	VerifiedBy         string              `json:"verifiedBy"`
+	VerifiedAt         string              `json:"verifiedAt"`
+	VerificationStatus string              `json:"verificationStatus"`
+	IsLastUsed         bool                `json:"isLastUsed"`
+}
+
+// GetID returns the value of ID.
+func (s *CustomerBankDto) GetID() string {
+	return s.ID
+}
+
+// GetLegacyId returns the value of LegacyId.
+func (s *CustomerBankDto) GetLegacyId() string {
+	return s.LegacyId
+}
+
+// GetAccountUuid returns the value of AccountUuid.
+func (s *CustomerBankDto) GetAccountUuid() string {
+	return s.AccountUuid
+}
+
+// GetMandateId returns the value of MandateId.
+func (s *CustomerBankDto) GetMandateId() string {
+	return s.MandateId
+}
+
+// GetBeneficiaryName returns the value of BeneficiaryName.
+func (s *CustomerBankDto) GetBeneficiaryName() string {
+	return s.BeneficiaryName
+}
+
+// GetAccountNumber returns the value of AccountNumber.
+func (s *CustomerBankDto) GetAccountNumber() string {
+	return s.AccountNumber
+}
+
+// GetName returns the value of Name.
+func (s *CustomerBankDto) GetName() string {
+	return s.Name
+}
+
+// GetCurrency returns the value of Currency.
+func (s *CustomerBankDto) GetCurrency() string {
+	return s.Currency
+}
+
+// GetAddress returns the value of Address.
+func (s *CustomerBankDto) GetAddress() CustomerBankAddress {
+	return s.Address
+}
+
+// GetBankCode returns the value of BankCode.
+func (s *CustomerBankDto) GetBankCode() string {
+	return s.BankCode
+}
+
+// GetBranchCode returns the value of BranchCode.
+func (s *CustomerBankDto) GetBranchCode() string {
+	return s.BranchCode
+}
+
+// GetSwift returns the value of Swift.
+func (s *CustomerBankDto) GetSwift() string {
+	return s.Swift
+}
+
+// GetImageUrl returns the value of ImageUrl.
+func (s *CustomerBankDto) GetImageUrl() string {
+	return s.ImageUrl
+}
+
+// GetAccountType returns the value of AccountType.
+func (s *CustomerBankDto) GetAccountType() string {
+	return s.AccountType
+}
+
+// GetMeta returns the value of Meta.
+func (s *CustomerBankDto) GetMeta() CustomerBankDtoMeta {
+	return s.Meta
+}
+
+// GetVerifiedBy returns the value of VerifiedBy.
+func (s *CustomerBankDto) GetVerifiedBy() string {
+	return s.VerifiedBy
+}
+
+// GetVerifiedAt returns the value of VerifiedAt.
+func (s *CustomerBankDto) GetVerifiedAt() string {
+	return s.VerifiedAt
+}
+
+// GetVerificationStatus returns the value of VerificationStatus.
+func (s *CustomerBankDto) GetVerificationStatus() string {
+	return s.VerificationStatus
+}
+
+// GetIsLastUsed returns the value of IsLastUsed.
+func (s *CustomerBankDto) GetIsLastUsed() bool {
+	return s.IsLastUsed
+}
+
+// SetID sets the value of ID.
+func (s *CustomerBankDto) SetID(val string) {
+	s.ID = val
+}
+
+// SetLegacyId sets the value of LegacyId.
+func (s *CustomerBankDto) SetLegacyId(val string) {
+	s.LegacyId = val
+}
+
+// SetAccountUuid sets the value of AccountUuid.
+func (s *CustomerBankDto) SetAccountUuid(val string) {
+	s.AccountUuid = val
+}
+
+// SetMandateId sets the value of MandateId.
+func (s *CustomerBankDto) SetMandateId(val string) {
+	s.MandateId = val
+}
+
+// SetBeneficiaryName sets the value of BeneficiaryName.
+func (s *CustomerBankDto) SetBeneficiaryName(val string) {
+	s.BeneficiaryName = val
+}
+
+// SetAccountNumber sets the value of AccountNumber.
+func (s *CustomerBankDto) SetAccountNumber(val string) {
+	s.AccountNumber = val
+}
+
+// SetName sets the value of Name.
+func (s *CustomerBankDto) SetName(val string) {
+	s.Name = val
+}
+
+// SetCurrency sets the value of Currency.
+func (s *CustomerBankDto) SetCurrency(val string) {
+	s.Currency = val
+}
+
+// SetAddress sets the value of Address.
+func (s *CustomerBankDto) SetAddress(val CustomerBankAddress) {
+	s.Address = val
+}
+
+// SetBankCode sets the value of BankCode.
+func (s *CustomerBankDto) SetBankCode(val string) {
+	s.BankCode = val
+}
+
+// SetBranchCode sets the value of BranchCode.
+func (s *CustomerBankDto) SetBranchCode(val string) {
+	s.BranchCode = val
+}
+
+// SetSwift sets the value of Swift.
+func (s *CustomerBankDto) SetSwift(val string) {
+	s.Swift = val
+}
+
+// SetImageUrl sets the value of ImageUrl.
+func (s *CustomerBankDto) SetImageUrl(val string) {
+	s.ImageUrl = val
+}
+
+// SetAccountType sets the value of AccountType.
+func (s *CustomerBankDto) SetAccountType(val string) {
+	s.AccountType = val
+}
+
+// SetMeta sets the value of Meta.
+func (s *CustomerBankDto) SetMeta(val CustomerBankDtoMeta) {
+	s.Meta = val
+}
+
+// SetVerifiedBy sets the value of VerifiedBy.
+func (s *CustomerBankDto) SetVerifiedBy(val string) {
+	s.VerifiedBy = val
+}
+
+// SetVerifiedAt sets the value of VerifiedAt.
+func (s *CustomerBankDto) SetVerifiedAt(val string) {
+	s.VerifiedAt = val
+}
+
+// SetVerificationStatus sets the value of VerificationStatus.
+func (s *CustomerBankDto) SetVerificationStatus(val string) {
+	s.VerificationStatus = val
+}
+
+// SetIsLastUsed sets the value of IsLastUsed.
+func (s *CustomerBankDto) SetIsLastUsed(val bool) {
+	s.IsLastUsed = val
+}
+
+type CustomerBankDtoMeta struct{}
 
 // CustomerBankWhitelistInternalControllerCreateWhitelistedCustomerBankCreated is response for CustomerBankWhitelistInternalControllerCreateWhitelistedCustomerBank operation.
 type CustomerBankWhitelistInternalControllerCreateWhitelistedCustomerBankCreated struct{}
@@ -2014,6 +2690,95 @@ type EddaCallbackExternalControllerMandateCancellationCallbackNoContent struct{}
 // EddaCallbackExternalControllerSubmitResponseCallbackNoContent is response for EddaCallbackExternalControllerSubmitResponseCallback operation.
 type EddaCallbackExternalControllerSubmitResponseCallbackNoContent struct{}
 
+// Ref: #/components/schemas/ErrorBadRequestDto
+type ErrorBadRequestDto struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
+// GetCode returns the value of Code.
+func (s *ErrorBadRequestDto) GetCode() string {
+	return s.Code
+}
+
+// GetMessage returns the value of Message.
+func (s *ErrorBadRequestDto) GetMessage() string {
+	return s.Message
+}
+
+// SetCode sets the value of Code.
+func (s *ErrorBadRequestDto) SetCode(val string) {
+	s.Code = val
+}
+
+// SetMessage sets the value of Message.
+func (s *ErrorBadRequestDto) SetMessage(val string) {
+	s.Message = val
+}
+
+func (*ErrorBadRequestDto) withdrawalsInternalControllerCreateWithdrawalRes() {}
+
+// Ref: #/components/schemas/ErrorInternalServerDto
+type ErrorInternalServerDto struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
+// GetCode returns the value of Code.
+func (s *ErrorInternalServerDto) GetCode() string {
+	return s.Code
+}
+
+// GetMessage returns the value of Message.
+func (s *ErrorInternalServerDto) GetMessage() string {
+	return s.Message
+}
+
+// SetCode sets the value of Code.
+func (s *ErrorInternalServerDto) SetCode(val string) {
+	s.Code = val
+}
+
+// SetMessage sets the value of Message.
+func (s *ErrorInternalServerDto) SetMessage(val string) {
+	s.Message = val
+}
+
+func (*ErrorInternalServerDto) withdrawalsExternalControllerGetWithdrawalByIdRes()        {}
+func (*ErrorInternalServerDto) withdrawalsExternalControllerListWithdrawalsByAccountRes() {}
+func (*ErrorInternalServerDto) withdrawalsInternalControllerCreateWithdrawalRes()         {}
+func (*ErrorInternalServerDto) withdrawalsInternalControllerGetWithdrawalByIdRes()        {}
+func (*ErrorInternalServerDto) withdrawalsInternalControllerListWithdrawalsByAccountRes() {}
+
+// Ref: #/components/schemas/ErrorNotFoundDto
+type ErrorNotFoundDto struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
+// GetCode returns the value of Code.
+func (s *ErrorNotFoundDto) GetCode() string {
+	return s.Code
+}
+
+// GetMessage returns the value of Message.
+func (s *ErrorNotFoundDto) GetMessage() string {
+	return s.Message
+}
+
+// SetCode sets the value of Code.
+func (s *ErrorNotFoundDto) SetCode(val string) {
+	s.Code = val
+}
+
+// SetMessage sets the value of Message.
+func (s *ErrorNotFoundDto) SetMessage(val string) {
+	s.Message = val
+}
+
+func (*ErrorNotFoundDto) withdrawalsExternalControllerGetWithdrawalByIdRes() {}
+func (*ErrorNotFoundDto) withdrawalsInternalControllerGetWithdrawalByIdRes() {}
+
 // Ref: #/components/schemas/ExternalSubmitWithdrawalRequestsInputDto
 type ExternalSubmitWithdrawalRequestsInputDto struct {
 	RequestId          OptString                                        `json:"requestId"`
@@ -2887,6 +3652,25 @@ func (s *GetLeanTokenDto) SetScope(val string) {
 // Ref: #/components/schemas/GetRetailBanksListResponse
 type GetRetailBanksListResponse struct{}
 
+// Ref: #/components/schemas/GetWithdrawalResponseDTO
+type GetWithdrawalResponseDTO struct {
+	// Withdrawal entity with all details.
+	Data Withdrawal `json:"data"`
+}
+
+// GetData returns the value of Data.
+func (s *GetWithdrawalResponseDTO) GetData() Withdrawal {
+	return s.Data
+}
+
+// SetData sets the value of Data.
+func (s *GetWithdrawalResponseDTO) SetData(val Withdrawal) {
+	s.Data = val
+}
+
+func (*GetWithdrawalResponseDTO) withdrawalsExternalControllerGetWithdrawalByIdRes() {}
+func (*GetWithdrawalResponseDTO) withdrawalsInternalControllerGetWithdrawalByIdRes() {}
+
 // HealthControllerGetEddaHealthOK is response for HealthControllerGetEddaHealth operation.
 type HealthControllerGetEddaHealthOK struct{}
 
@@ -2904,6 +3688,9 @@ type InitMandateSetupResultDTO struct{}
 
 // IntergoalTransferRequestExternalControllerGetIntergoalTransfersDurationOK is response for IntergoalTransferRequestExternalControllerGetIntergoalTransfersDuration operation.
 type IntergoalTransferRequestExternalControllerGetIntergoalTransfersDurationOK struct{}
+
+// IntergoalTransferRequestInternalControllerCancelOK is response for IntergoalTransferRequestInternalControllerCancel operation.
+type IntergoalTransferRequestInternalControllerCancelOK struct{}
 
 // IntergoalTransferRequestInternalControllerGetIGTSchedulesBadRequest is response for IntergoalTransferRequestInternalControllerGetIGTSchedules operation.
 type IntergoalTransferRequestInternalControllerGetIGTSchedulesBadRequest struct{}
@@ -3189,6 +3976,54 @@ func (s *InternalSubmitWithdrawalRequestsInputDtoWithdrawalType) UnmarshalText(d
 	}
 }
 
+// Ref: #/components/schemas/LeanCustomer
+type LeanCustomer struct {
+	LeanCustomerUuid string    `json:"leanCustomerUuid"`
+	AccountUuid      string    `json:"accountUuid"`
+	CreatedAt        time.Time `json:"createdAt"`
+	UpdatedAt        time.Time `json:"updatedAt"`
+}
+
+// GetLeanCustomerUuid returns the value of LeanCustomerUuid.
+func (s *LeanCustomer) GetLeanCustomerUuid() string {
+	return s.LeanCustomerUuid
+}
+
+// GetAccountUuid returns the value of AccountUuid.
+func (s *LeanCustomer) GetAccountUuid() string {
+	return s.AccountUuid
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *LeanCustomer) GetCreatedAt() time.Time {
+	return s.CreatedAt
+}
+
+// GetUpdatedAt returns the value of UpdatedAt.
+func (s *LeanCustomer) GetUpdatedAt() time.Time {
+	return s.UpdatedAt
+}
+
+// SetLeanCustomerUuid sets the value of LeanCustomerUuid.
+func (s *LeanCustomer) SetLeanCustomerUuid(val string) {
+	s.LeanCustomerUuid = val
+}
+
+// SetAccountUuid sets the value of AccountUuid.
+func (s *LeanCustomer) SetAccountUuid(val string) {
+	s.AccountUuid = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *LeanCustomer) SetCreatedAt(val time.Time) {
+	s.CreatedAt = val
+}
+
+// SetUpdatedAt sets the value of UpdatedAt.
+func (s *LeanCustomer) SetUpdatedAt(val time.Time) {
+	s.UpdatedAt = val
+}
+
 // LeanInternalControllerTestConnectivityOK is response for LeanInternalControllerTestConnectivity operation.
 type LeanInternalControllerTestConnectivityOK struct{}
 
@@ -3336,6 +4171,37 @@ func (s *LeanUnlinkBankDto) SetForce(val OptBool) {
 	s.Force = val
 }
 
+// Ref: #/components/schemas/ListWithdrawalsResponseDTO
+type ListWithdrawalsResponseDTO struct {
+	// List of withdrawal entities for the account.
+	Data []Withdrawal `json:"data"`
+	// Pagination metadata.
+	Meta OffsetBasedPaginationMetaDTO `json:"meta"`
+}
+
+// GetData returns the value of Data.
+func (s *ListWithdrawalsResponseDTO) GetData() []Withdrawal {
+	return s.Data
+}
+
+// GetMeta returns the value of Meta.
+func (s *ListWithdrawalsResponseDTO) GetMeta() OffsetBasedPaginationMetaDTO {
+	return s.Meta
+}
+
+// SetData sets the value of Data.
+func (s *ListWithdrawalsResponseDTO) SetData(val []Withdrawal) {
+	s.Data = val
+}
+
+// SetMeta sets the value of Meta.
+func (s *ListWithdrawalsResponseDTO) SetMeta(val OffsetBasedPaginationMetaDTO) {
+	s.Meta = val
+}
+
+func (*ListWithdrawalsResponseDTO) withdrawalsExternalControllerListWithdrawalsByAccountRes() {}
+func (*ListWithdrawalsResponseDTO) withdrawalsInternalControllerListWithdrawalsByAccountRes() {}
+
 // LocalBanksControllerGetLocalBanksOK is response for LocalBanksControllerGetLocalBanks operation.
 type LocalBanksControllerGetLocalBanksOK struct{}
 
@@ -3411,6 +4277,82 @@ func (o NilString) Or(d string) string {
 		return v
 	}
 	return d
+}
+
+// Ref: #/components/schemas/OffsetBasedPaginationMetaDTO
+type OffsetBasedPaginationMetaDTO struct {
+	// Current page number.
+	CurrentPage float64 `json:"currentPage"`
+	// Number of items per page.
+	ItemsPerPage float64 `json:"itemsPerPage"`
+	// Total number of items.
+	TotalItems float64 `json:"totalItems"`
+	// Total number of pages.
+	TotalPages float64 `json:"totalPages"`
+	// Indicates if there is a next page available.
+	HasNextPage bool `json:"hasNextPage"`
+	// Indicates if there is a previous page available.
+	HasPreviousPage bool `json:"hasPreviousPage"`
+}
+
+// GetCurrentPage returns the value of CurrentPage.
+func (s *OffsetBasedPaginationMetaDTO) GetCurrentPage() float64 {
+	return s.CurrentPage
+}
+
+// GetItemsPerPage returns the value of ItemsPerPage.
+func (s *OffsetBasedPaginationMetaDTO) GetItemsPerPage() float64 {
+	return s.ItemsPerPage
+}
+
+// GetTotalItems returns the value of TotalItems.
+func (s *OffsetBasedPaginationMetaDTO) GetTotalItems() float64 {
+	return s.TotalItems
+}
+
+// GetTotalPages returns the value of TotalPages.
+func (s *OffsetBasedPaginationMetaDTO) GetTotalPages() float64 {
+	return s.TotalPages
+}
+
+// GetHasNextPage returns the value of HasNextPage.
+func (s *OffsetBasedPaginationMetaDTO) GetHasNextPage() bool {
+	return s.HasNextPage
+}
+
+// GetHasPreviousPage returns the value of HasPreviousPage.
+func (s *OffsetBasedPaginationMetaDTO) GetHasPreviousPage() bool {
+	return s.HasPreviousPage
+}
+
+// SetCurrentPage sets the value of CurrentPage.
+func (s *OffsetBasedPaginationMetaDTO) SetCurrentPage(val float64) {
+	s.CurrentPage = val
+}
+
+// SetItemsPerPage sets the value of ItemsPerPage.
+func (s *OffsetBasedPaginationMetaDTO) SetItemsPerPage(val float64) {
+	s.ItemsPerPage = val
+}
+
+// SetTotalItems sets the value of TotalItems.
+func (s *OffsetBasedPaginationMetaDTO) SetTotalItems(val float64) {
+	s.TotalItems = val
+}
+
+// SetTotalPages sets the value of TotalPages.
+func (s *OffsetBasedPaginationMetaDTO) SetTotalPages(val float64) {
+	s.TotalPages = val
+}
+
+// SetHasNextPage sets the value of HasNextPage.
+func (s *OffsetBasedPaginationMetaDTO) SetHasNextPage(val bool) {
+	s.HasNextPage = val
+}
+
+// SetHasPreviousPage sets the value of HasPreviousPage.
+func (s *OffsetBasedPaginationMetaDTO) SetHasPreviousPage(val bool) {
+	s.HasPreviousPage = val
 }
 
 // NewOptAdminBankDto returns new OptAdminBankDto with value set to v.
@@ -3735,6 +4677,52 @@ func (o OptDepositScheduleViewFrequency) Or(d DepositScheduleViewFrequency) Depo
 	return d
 }
 
+// NewOptFloat64 returns new OptFloat64 with value set to v.
+func NewOptFloat64(v float64) OptFloat64 {
+	return OptFloat64{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptFloat64 is optional float64.
+type OptFloat64 struct {
+	Value float64
+	Set   bool
+}
+
+// IsSet returns true if OptFloat64 was set.
+func (o OptFloat64) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptFloat64) Reset() {
+	var v float64
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptFloat64) SetTo(v float64) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptFloat64) Get() (v float64, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptFloat64) Or(d float64) float64 {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptInternalSubmitWithdrawalRequestsInputDtoWithdrawalType returns new OptInternalSubmitWithdrawalRequestsInputDtoWithdrawalType with value set to v.
 func NewOptInternalSubmitWithdrawalRequestsInputDtoWithdrawalType(v InternalSubmitWithdrawalRequestsInputDtoWithdrawalType) OptInternalSubmitWithdrawalRequestsInputDtoWithdrawalType {
 	return OptInternalSubmitWithdrawalRequestsInputDtoWithdrawalType{
@@ -3869,52 +4857,6 @@ func (o OptPortfoliosInternalControllerV2GetMoneyMovementsV2TransferDirection) G
 
 // Or returns value if set, or given parameter if does not.
 func (o OptPortfoliosInternalControllerV2GetMoneyMovementsV2TransferDirection) Or(d PortfoliosInternalControllerV2GetMoneyMovementsV2TransferDirection) PortfoliosInternalControllerV2GetMoneyMovementsV2TransferDirection {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptSrsSubTransferWithdrawalCostBasisForBank returns new OptSrsSubTransferWithdrawalCostBasisForBank with value set to v.
-func NewOptSrsSubTransferWithdrawalCostBasisForBank(v SrsSubTransferWithdrawalCostBasisForBank) OptSrsSubTransferWithdrawalCostBasisForBank {
-	return OptSrsSubTransferWithdrawalCostBasisForBank{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptSrsSubTransferWithdrawalCostBasisForBank is optional SrsSubTransferWithdrawalCostBasisForBank.
-type OptSrsSubTransferWithdrawalCostBasisForBank struct {
-	Value SrsSubTransferWithdrawalCostBasisForBank
-	Set   bool
-}
-
-// IsSet returns true if OptSrsSubTransferWithdrawalCostBasisForBank was set.
-func (o OptSrsSubTransferWithdrawalCostBasisForBank) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptSrsSubTransferWithdrawalCostBasisForBank) Reset() {
-	var v SrsSubTransferWithdrawalCostBasisForBank
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptSrsSubTransferWithdrawalCostBasisForBank) SetTo(v SrsSubTransferWithdrawalCostBasisForBank) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptSrsSubTransferWithdrawalCostBasisForBank) Get() (v SrsSubTransferWithdrawalCostBasisForBank, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptSrsSubTransferWithdrawalCostBasisForBank) Or(d SrsSubTransferWithdrawalCostBasisForBank) SrsSubTransferWithdrawalCostBasisForBank {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -4376,7 +5318,7 @@ type SrsSubTransfer struct {
 	WithdrawalCommentForBank OptString `json:"withdrawalCommentForBank"`
 	// Cost basis to determine PnL of this subtransfer. For SRS withdrawals only. Only calculated when
 	// fetching a single transfer request.
-	WithdrawalCostBasisForBank OptSrsSubTransferWithdrawalCostBasisForBank `json:"withdrawalCostBasisForBank"`
+	WithdrawalCostBasisForBank OptMoney `json:"withdrawalCostBasisForBank"`
 }
 
 // GetRequestId returns the value of RequestId.
@@ -4425,7 +5367,7 @@ func (s *SrsSubTransfer) GetWithdrawalCommentForBank() OptString {
 }
 
 // GetWithdrawalCostBasisForBank returns the value of WithdrawalCostBasisForBank.
-func (s *SrsSubTransfer) GetWithdrawalCostBasisForBank() OptSrsSubTransferWithdrawalCostBasisForBank {
+func (s *SrsSubTransfer) GetWithdrawalCostBasisForBank() OptMoney {
 	return s.WithdrawalCostBasisForBank
 }
 
@@ -4475,33 +5417,8 @@ func (s *SrsSubTransfer) SetWithdrawalCommentForBank(val OptString) {
 }
 
 // SetWithdrawalCostBasisForBank sets the value of WithdrawalCostBasisForBank.
-func (s *SrsSubTransfer) SetWithdrawalCostBasisForBank(val OptSrsSubTransferWithdrawalCostBasisForBank) {
+func (s *SrsSubTransfer) SetWithdrawalCostBasisForBank(val OptMoney) {
 	s.WithdrawalCostBasisForBank = val
-}
-
-type SrsSubTransferWithdrawalCostBasisForBank struct {
-	Currency string  `json:"currency"`
-	Amount   float64 `json:"amount"`
-}
-
-// GetCurrency returns the value of Currency.
-func (s *SrsSubTransferWithdrawalCostBasisForBank) GetCurrency() string {
-	return s.Currency
-}
-
-// GetAmount returns the value of Amount.
-func (s *SrsSubTransferWithdrawalCostBasisForBank) GetAmount() float64 {
-	return s.Amount
-}
-
-// SetCurrency sets the value of Currency.
-func (s *SrsSubTransferWithdrawalCostBasisForBank) SetCurrency(val string) {
-	s.Currency = val
-}
-
-// SetAmount sets the value of Amount.
-func (s *SrsSubTransferWithdrawalCostBasisForBank) SetAmount(val float64) {
-	s.Amount = val
 }
 
 // Ref: #/components/schemas/SrsTransferRequestSubtransfers
@@ -4602,18 +5519,18 @@ func (s *StartIGTRequestWorkflowExternalRequestDTO) SetComment(val OptString) {
 
 // Ref: #/components/schemas/StartIGTRequestWorkflowRequestDTO
 type StartIGTRequestWorkflowRequestDTO struct {
-	IgtRequestUuid                         string                                           `json:"igtRequestUuid"`
-	ConvertPartialToFullIfExceedsThreshold OptBool                                          `json:"convertPartialToFullIfExceedsThreshold"`
-	ClosePortfolioOnFullWithdrawal         OptBool                                          `json:"closePortfolioOnFullWithdrawal"`
-	AccountUuid                            string                                           `json:"accountUuid"`
-	SourcePortfolioUuid                    string                                           `json:"sourcePortfolioUuid"`
-	DestinationPortfolioUuid               string                                           `json:"destinationPortfolioUuid"`
-	RequestType                            StartIGTRequestWorkflowRequestDTORequestType     `json:"requestType"`
-	ScheduleType                           StartIGTRequestWorkflowRequestDTOScheduleType    `json:"scheduleType"`
-	RequestedAmount                        StartIGTRequestWorkflowRequestDTORequestedAmount `json:"requestedAmount"`
-	ShouldSkipNotification                 OptBool                                          `json:"shouldSkipNotification"`
-	RequestedBy                            OptString                                        `json:"requestedBy"`
-	Reason                                 OptString                                        `json:"reason"`
+	IgtRequestUuid                         string                                        `json:"igtRequestUuid"`
+	ConvertPartialToFullIfExceedsThreshold OptBool                                       `json:"convertPartialToFullIfExceedsThreshold"`
+	ClosePortfolioOnFullWithdrawal         OptBool                                       `json:"closePortfolioOnFullWithdrawal"`
+	AccountUuid                            string                                        `json:"accountUuid"`
+	SourcePortfolioUuid                    string                                        `json:"sourcePortfolioUuid"`
+	DestinationPortfolioUuid               string                                        `json:"destinationPortfolioUuid"`
+	RequestType                            StartIGTRequestWorkflowRequestDTORequestType  `json:"requestType"`
+	ScheduleType                           StartIGTRequestWorkflowRequestDTOScheduleType `json:"scheduleType"`
+	RequestedAmount                        Money                                         `json:"requestedAmount"`
+	ShouldSkipNotification                 OptBool                                       `json:"shouldSkipNotification"`
+	RequestedBy                            OptString                                     `json:"requestedBy"`
+	Reason                                 OptString                                     `json:"reason"`
 }
 
 // GetIgtRequestUuid returns the value of IgtRequestUuid.
@@ -4657,7 +5574,7 @@ func (s *StartIGTRequestWorkflowRequestDTO) GetScheduleType() StartIGTRequestWor
 }
 
 // GetRequestedAmount returns the value of RequestedAmount.
-func (s *StartIGTRequestWorkflowRequestDTO) GetRequestedAmount() StartIGTRequestWorkflowRequestDTORequestedAmount {
+func (s *StartIGTRequestWorkflowRequestDTO) GetRequestedAmount() Money {
 	return s.RequestedAmount
 }
 
@@ -4717,7 +5634,7 @@ func (s *StartIGTRequestWorkflowRequestDTO) SetScheduleType(val StartIGTRequestW
 }
 
 // SetRequestedAmount sets the value of RequestedAmount.
-func (s *StartIGTRequestWorkflowRequestDTO) SetRequestedAmount(val StartIGTRequestWorkflowRequestDTORequestedAmount) {
+func (s *StartIGTRequestWorkflowRequestDTO) SetRequestedAmount(val Money) {
 	s.RequestedAmount = val
 }
 
@@ -4784,31 +5701,6 @@ func (s *StartIGTRequestWorkflowRequestDTORequestType) UnmarshalText(data []byte
 	}
 }
 
-type StartIGTRequestWorkflowRequestDTORequestedAmount struct {
-	Currency string  `json:"currency"`
-	Amount   float64 `json:"amount"`
-}
-
-// GetCurrency returns the value of Currency.
-func (s *StartIGTRequestWorkflowRequestDTORequestedAmount) GetCurrency() string {
-	return s.Currency
-}
-
-// GetAmount returns the value of Amount.
-func (s *StartIGTRequestWorkflowRequestDTORequestedAmount) GetAmount() float64 {
-	return s.Amount
-}
-
-// SetCurrency sets the value of Currency.
-func (s *StartIGTRequestWorkflowRequestDTORequestedAmount) SetCurrency(val string) {
-	s.Currency = val
-}
-
-// SetAmount sets the value of Amount.
-func (s *StartIGTRequestWorkflowRequestDTORequestedAmount) SetAmount(val float64) {
-	s.Amount = val
-}
-
 type StartIGTRequestWorkflowRequestDTOScheduleType string
 
 const (
@@ -4860,7 +5752,7 @@ type StartIGTRequestWorkflowSuccessResponseDTO struct {
 	Status                   StartIGTRequestWorkflowSuccessResponseDTOStatus           `json:"status"`
 	RequestType              StartIGTRequestWorkflowSuccessResponseDTORequestType      `json:"requestType"`
 	ScheduleType             StartIGTRequestWorkflowSuccessResponseDTOScheduleType     `json:"scheduleType"`
-	RequestedAmount          StartIGTRequestWorkflowSuccessResponseDTORequestedAmount  `json:"requestedAmount"`
+	RequestedAmount          Money                                                     `json:"requestedAmount"`
 	CreatedAt                string                                                    `json:"createdAt"`
 	UpdatedAt                string                                                    `json:"updatedAt"`
 	CompletedAt              OptString                                                 `json:"completedAt"`
@@ -4911,7 +5803,7 @@ func (s *StartIGTRequestWorkflowSuccessResponseDTO) GetScheduleType() StartIGTRe
 }
 
 // GetRequestedAmount returns the value of RequestedAmount.
-func (s *StartIGTRequestWorkflowSuccessResponseDTO) GetRequestedAmount() StartIGTRequestWorkflowSuccessResponseDTORequestedAmount {
+func (s *StartIGTRequestWorkflowSuccessResponseDTO) GetRequestedAmount() Money {
 	return s.RequestedAmount
 }
 
@@ -4991,7 +5883,7 @@ func (s *StartIGTRequestWorkflowSuccessResponseDTO) SetScheduleType(val StartIGT
 }
 
 // SetRequestedAmount sets the value of RequestedAmount.
-func (s *StartIGTRequestWorkflowSuccessResponseDTO) SetRequestedAmount(val StartIGTRequestWorkflowSuccessResponseDTORequestedAmount) {
+func (s *StartIGTRequestWorkflowSuccessResponseDTO) SetRequestedAmount(val Money) {
 	s.RequestedAmount = val
 }
 
@@ -5119,31 +6011,6 @@ func (s *StartIGTRequestWorkflowSuccessResponseDTORequestType) UnmarshalText(dat
 	default:
 		return errors.Errorf("invalid value: %q", data)
 	}
-}
-
-type StartIGTRequestWorkflowSuccessResponseDTORequestedAmount struct {
-	Currency string  `json:"currency"`
-	Amount   float64 `json:"amount"`
-}
-
-// GetCurrency returns the value of Currency.
-func (s *StartIGTRequestWorkflowSuccessResponseDTORequestedAmount) GetCurrency() string {
-	return s.Currency
-}
-
-// GetAmount returns the value of Amount.
-func (s *StartIGTRequestWorkflowSuccessResponseDTORequestedAmount) GetAmount() float64 {
-	return s.Amount
-}
-
-// SetCurrency sets the value of Currency.
-func (s *StartIGTRequestWorkflowSuccessResponseDTORequestedAmount) SetCurrency(val string) {
-	s.Currency = val
-}
-
-// SetAmount sets the value of Amount.
-func (s *StartIGTRequestWorkflowSuccessResponseDTORequestedAmount) SetAmount(val float64) {
-	s.Amount = val
 }
 
 type StartIGTRequestWorkflowSuccessResponseDTOScheduleType string
@@ -5633,6 +6500,9 @@ func (s *UpdateWithdrawalAmlStatusDto) SetComment(val OptString) {
 func (s *UpdateWithdrawalAmlStatusDto) SetUpdatedBy(val string) {
 	s.UpdatedBy = val
 }
+
+// Ref: #/components/schemas/Withdrawal
+type Withdrawal struct{}
 
 // Ref: #/components/schemas/WithdrawalRequestDto
 type WithdrawalRequestDto struct {

@@ -65,7 +65,7 @@ func (s *AnonymizePiiRequestDTO) SetFake() {
 }
 
 // SetFake set fake values.
-func (s *AnonymizePiiRequestDTOUser) SetFake() {
+func (s *AnonymizePiiUserRequestDto) SetFake() {
 	{
 		{
 			s.UserID = "string"
@@ -230,6 +230,25 @@ func (s *BatchWithdrawalApprovalResponseDto) SetFake() {
 				}
 				s.WithdrawalIds = append(s.WithdrawalIds, elem)
 			}
+		}
+	}
+}
+
+// SetFake set fake values.
+func (s *CancelIntergoalTransferDTO) SetFake() {
+	{
+		{
+			s.AccountId = "string"
+		}
+	}
+	{
+		{
+			s.FromPortfolioId = "string"
+		}
+	}
+	{
+		{
+			s.Reason = "string"
 		}
 	}
 }
@@ -405,7 +424,193 @@ func (s *CreateWhitelistedCustomerBankRequestDto) SetFake() {
 }
 
 // SetFake set fake values.
+func (s *CreateWithdrawalBodyInternalDTO) SetFake() {
+	{
+		{
+			s.UUID = "string"
+		}
+	}
+	{
+		{
+			s.PortfolioUuid = "string"
+		}
+	}
+	{
+		{
+			s.PortfolioType.SetFake()
+		}
+	}
+	{
+		{
+			s.CustomerBankLegacyId = "string"
+		}
+	}
+	{
+		{
+			s.RequestedAmount = float64(0)
+		}
+	}
+	{
+		{
+			s.RequestedCurrency = "string"
+		}
+	}
+	{
+		{
+			s.Reason.SetFake()
+		}
+	}
+	{
+		{
+			s.Type.SetFake()
+		}
+	}
+	{
+		{
+			s.RequestedRedemptionExtent.SetFake()
+		}
+	}
+	{
+		{
+			s.Comment.SetFake()
+		}
+	}
+	{
+		{
+			s.AccountUuid = "string"
+		}
+	}
+}
+
+// SetFake set fake values.
+func (s *CreateWithdrawalBodyInternalDTOPortfolioType) SetFake() {
+	*s = CreateWithdrawalBodyInternalDTOPortfolioTypeRETIREMENT
+}
+
+// SetFake set fake values.
+func (s *CreateWithdrawalBodyInternalDTORequestedRedemptionExtent) SetFake() {
+	*s = CreateWithdrawalBodyInternalDTORequestedRedemptionExtentFULL
+}
+
+// SetFake set fake values.
+func (s *CreateWithdrawalBodyInternalDTOType) SetFake() {
+	*s = CreateWithdrawalBodyInternalDTOTypeAUTOPAYOUTWITHDRAWAL
+}
+
+// SetFake set fake values.
+func (s *CreateWithdrawalResponseDTO) SetFake() {
+	{
+		{
+			s.Data.SetFake()
+		}
+	}
+}
+
+// SetFake set fake values.
+func (s *CustomerBankAddress) SetFake() {
+}
+
+// SetFake set fake values.
 func (s *CustomerBankDto) SetFake() {
+	{
+		{
+			s.ID = "string"
+		}
+	}
+	{
+		{
+			s.LegacyId = "string"
+		}
+	}
+	{
+		{
+			s.AccountUuid = "string"
+		}
+	}
+	{
+		{
+			s.MandateId = "string"
+		}
+	}
+	{
+		{
+			s.BeneficiaryName = "string"
+		}
+	}
+	{
+		{
+			s.AccountNumber = "string"
+		}
+	}
+	{
+		{
+			s.Name = "string"
+		}
+	}
+	{
+		{
+			s.Currency = "string"
+		}
+	}
+	{
+		{
+			s.Address.SetFake()
+		}
+	}
+	{
+		{
+			s.BankCode = "string"
+		}
+	}
+	{
+		{
+			s.BranchCode = "string"
+		}
+	}
+	{
+		{
+			s.Swift = "string"
+		}
+	}
+	{
+		{
+			s.ImageUrl = "string"
+		}
+	}
+	{
+		{
+			s.AccountType = "string"
+		}
+	}
+	{
+		{
+			s.Meta.SetFake()
+		}
+	}
+	{
+		{
+			s.VerifiedBy = "string"
+		}
+	}
+	{
+		{
+			s.VerifiedAt = "string"
+		}
+	}
+	{
+		{
+			s.VerificationStatus = "string"
+		}
+	}
+	{
+		{
+			s.IsLastUsed = true
+		}
+	}
+}
+
+// SetFake set fake values.
+func (s *CustomerBankDtoMeta) SetFake() {
 }
 
 // SetFake set fake values.
@@ -625,6 +830,48 @@ func (s *DepositScheduleViewScheduleType) SetFake() {
 // SetFake set fake values.
 func (s *DepositScheduleViewStatus) SetFake() {
 	*s = DepositScheduleViewStatusACTIVE
+}
+
+// SetFake set fake values.
+func (s *ErrorBadRequestDto) SetFake() {
+	{
+		{
+			s.Code = "string"
+		}
+	}
+	{
+		{
+			s.Message = "string"
+		}
+	}
+}
+
+// SetFake set fake values.
+func (s *ErrorInternalServerDto) SetFake() {
+	{
+		{
+			s.Code = "string"
+		}
+	}
+	{
+		{
+			s.Message = "string"
+		}
+	}
+}
+
+// SetFake set fake values.
+func (s *ErrorNotFoundDto) SetFake() {
+	{
+		{
+			s.Code = "string"
+		}
+	}
+	{
+		{
+			s.Message = "string"
+		}
+	}
 }
 
 // SetFake set fake values.
@@ -965,6 +1212,15 @@ func (s *GetRetailBanksListResponse) SetFake() {
 }
 
 // SetFake set fake values.
+func (s *GetWithdrawalResponseDTO) SetFake() {
+	{
+		{
+			s.Data.SetFake()
+		}
+	}
+}
+
+// SetFake set fake values.
 func (s *InitMandateSetupRequestDTO) SetFake() {
 }
 
@@ -1115,6 +1371,30 @@ func (s *InternalSubmitWithdrawalRequestsInputDtoWithdrawalType) SetFake() {
 }
 
 // SetFake set fake values.
+func (s *LeanCustomer) SetFake() {
+	{
+		{
+			s.LeanCustomerUuid = "string"
+		}
+	}
+	{
+		{
+			s.AccountUuid = "string"
+		}
+	}
+	{
+		{
+			s.CreatedAt = time.Now()
+		}
+	}
+	{
+		{
+			s.UpdatedAt = time.Now()
+		}
+	}
+}
+
+// SetFake set fake values.
 func (s *LeanPaymentIntentCancelInputDto) SetFake() {
 	{
 		{
@@ -1190,6 +1470,27 @@ func (s *LeanUnlinkBankDto) SetFake() {
 }
 
 // SetFake set fake values.
+func (s *ListWithdrawalsResponseDTO) SetFake() {
+	{
+		{
+			s.Data = nil
+			for i := 0; i < 0; i++ {
+				var elem Withdrawal
+				{
+					elem.SetFake()
+				}
+				s.Data = append(s.Data, elem)
+			}
+		}
+	}
+	{
+		{
+			s.Meta.SetFake()
+		}
+	}
+}
+
+// SetFake set fake values.
 func (s *Money) SetFake() {
 	{
 		{
@@ -1206,6 +1507,40 @@ func (s *Money) SetFake() {
 // SetFake set fake values.
 func (s *NilString) SetFake() {
 	s.Null = true
+}
+
+// SetFake set fake values.
+func (s *OffsetBasedPaginationMetaDTO) SetFake() {
+	{
+		{
+			s.CurrentPage = float64(0)
+		}
+	}
+	{
+		{
+			s.ItemsPerPage = float64(0)
+		}
+	}
+	{
+		{
+			s.TotalItems = float64(0)
+		}
+	}
+	{
+		{
+			s.TotalPages = float64(0)
+		}
+	}
+	{
+		{
+			s.HasNextPage = true
+		}
+	}
+	{
+		{
+			s.HasPreviousPage = true
+		}
+	}
 }
 
 // SetFake set fake values.
@@ -1283,15 +1618,6 @@ func (s *OptInternalSubmitWithdrawalRequestsInputDtoWithdrawalType) SetFake() {
 // SetFake set fake values.
 func (s *OptMoney) SetFake() {
 	var elem Money
-	{
-		elem.SetFake()
-	}
-	s.SetTo(elem)
-}
-
-// SetFake set fake values.
-func (s *OptSrsSubTransferWithdrawalCostBasisForBank) SetFake() {
-	var elem SrsSubTransferWithdrawalCostBasisForBank
 	{
 		elem.SetFake()
 	}
@@ -1400,20 +1726,6 @@ func (s *SrsSubTransfer) SetFake() {
 	{
 		{
 			s.WithdrawalCostBasisForBank.SetFake()
-		}
-	}
-}
-
-// SetFake set fake values.
-func (s *SrsSubTransferWithdrawalCostBasisForBank) SetFake() {
-	{
-		{
-			s.Currency = "string"
-		}
-	}
-	{
-		{
-			s.Amount = float64(0)
 		}
 	}
 }
@@ -1543,20 +1855,6 @@ func (s *StartIGTRequestWorkflowRequestDTORequestType) SetFake() {
 }
 
 // SetFake set fake values.
-func (s *StartIGTRequestWorkflowRequestDTORequestedAmount) SetFake() {
-	{
-		{
-			s.Currency = "string"
-		}
-	}
-	{
-		{
-			s.Amount = float64(0)
-		}
-	}
-}
-
-// SetFake set fake values.
 func (s *StartIGTRequestWorkflowRequestDTOScheduleType) SetFake() {
 	*s = StartIGTRequestWorkflowRequestDTOScheduleTypeONETIME
 }
@@ -1657,20 +1955,6 @@ func (s *StartIGTRequestWorkflowSuccessResponseDTORedemptionExtent) SetFake() {
 // SetFake set fake values.
 func (s *StartIGTRequestWorkflowSuccessResponseDTORequestType) SetFake() {
 	*s = StartIGTRequestWorkflowSuccessResponseDTORequestTypeAUTOPAYOUTTRANSFER
-}
-
-// SetFake set fake values.
-func (s *StartIGTRequestWorkflowSuccessResponseDTORequestedAmount) SetFake() {
-	{
-		{
-			s.Currency = "string"
-		}
-	}
-	{
-		{
-			s.Amount = float64(0)
-		}
-	}
 }
 
 // SetFake set fake values.
@@ -1834,6 +2118,10 @@ func (s *UpdateWithdrawalAmlStatusDto) SetFake() {
 			s.UpdatedBy = "string"
 		}
 	}
+}
+
+// SetFake set fake values.
+func (s *Withdrawal) SetFake() {
 }
 
 // SetFake set fake values.

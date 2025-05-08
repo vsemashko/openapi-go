@@ -8,3 +8,23 @@ type IntergoalTransferRequestInternalControllerGetIGTSchedulesRes interface {
 type IntergoalTransferRequestInternalControllerGetIntergoalTransfersRequestByAccountUuidRes interface {
 	intergoalTransferRequestInternalControllerGetIntergoalTransfersRequestByAccountUuidRes()
 }
+
+type WithdrawalsExternalControllerGetWithdrawalByIdRes interface {
+	withdrawalsExternalControllerGetWithdrawalByIdRes()
+}
+
+type WithdrawalsExternalControllerListWithdrawalsByAccountRes interface {
+	withdrawalsExternalControllerListWithdrawalsByAccountRes()
+}
+
+type WithdrawalsInternalControllerCreateWithdrawalRes interface {
+	withdrawalsInternalControllerCreateWithdrawalRes()
+}
+
+type WithdrawalsInternalControllerGetWithdrawalByIdRes interface {
+	withdrawalsInternalControllerGetWithdrawalByIdRes()
+}
+
+type WithdrawalsInternalControllerListWithdrawalsByAccountRes interface {
+	withdrawalsInternalControllerListWithdrawalsByAccountRes()
+}

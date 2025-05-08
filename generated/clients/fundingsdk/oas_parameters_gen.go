@@ -2,11 +2,31 @@
 
 package fundingsdk
 
-// CustomerBanksExternalControllerGetCustomerBanksParams is parameters of CustomerBanksExternalController_getCustomerBanks operation.
-type CustomerBanksExternalControllerGetCustomerBanksParams struct {
+// CustomerBanksExternalControllerV1GetCustomerBanksParams is parameters of CustomerBanksExternalControllerV1_getCustomerBanks operation.
+type CustomerBanksExternalControllerV1GetCustomerBanksParams struct {
 	WithLastUsed bool
 	WithDeleted  bool
 	AccountType  string
+}
+
+// CustomerBanksExternalControllerV2GetCustomerBanksV2Params is parameters of CustomerBanksExternalControllerV2_getCustomerBanksV2 operation.
+type CustomerBanksExternalControllerV2GetCustomerBanksV2Params struct {
+	// Mark customer bank that is last used to create deposit schedule with isLastUsed = true.
+	WithLastUsed OptBool
+	// Include soft deleted customer banks.
+	WithDeleted OptBool
+	// Filter by account type.
+	AccountType OptString
+}
+
+// CustomerBanksExternalControllerV2GetCustomerBanksV2UnmaskedParams is parameters of CustomerBanksExternalControllerV2_getCustomerBanksV2Unmasked operation.
+type CustomerBanksExternalControllerV2GetCustomerBanksV2UnmaskedParams struct {
+	// Mark customer bank that is last used to create deposit schedule with isLastUsed = true.
+	WithLastUsed OptBool
+	// Include soft deleted customer banks.
+	WithDeleted OptBool
+	// Filter by account type.
+	AccountType OptString
 }
 
 // CustomerBanksInternalControllerGetWithdrawalCustomerBankParams is parameters of CustomerBanksInternalController_getWithdrawalCustomerBank operation.
@@ -111,6 +131,12 @@ type IntergoalTransferRequestExternalControllerGetIntergoalTransfersDurationPara
 	Region       string
 }
 
+// IntergoalTransferRequestInternalControllerCancelParams is parameters of IntergoalTransferRequestInternalController_cancel operation.
+type IntergoalTransferRequestInternalControllerCancelParams struct {
+	// The UUID of the Intergoal Transfer Request to cancel.
+	ID string
+}
+
 // IntergoalTransferRequestInternalControllerGetIGTSchedulesParams is parameters of IntergoalTransferRequestInternalController_getIGTSchedules operation.
 type IntergoalTransferRequestInternalControllerGetIGTSchedulesParams struct {
 	UserId string
@@ -136,6 +162,11 @@ type LeanExternalControllerCancelPaymentIntentParams struct {
 // LeanExternalControllerGetBanksConnectStatusParams is parameters of LeanExternalController_getBanksConnectStatus operation.
 type LeanExternalControllerGetBanksConnectStatusParams struct {
 	BankIdentifier string
+}
+
+// LeanInternalControllerGetLeanUserByAccountUuidParams is parameters of LeanInternalController_getLeanUserByAccountUuid operation.
+type LeanInternalControllerGetLeanUserByAccountUuidParams struct {
+	AccountUuid string
 }
 
 // MockAbsBankControllerFakeMandateCreationUrlParams is parameters of MockAbsBankController_fakeMandateCreationUrl operation.
@@ -194,4 +225,46 @@ type SrsInternalControllerGetSrsTransferRequestsParams struct {
 type SrsInternalControllerGetSrsTransferRequestsWithSubTransfersParams struct {
 	Direction SrsInternalControllerGetSrsTransferRequestsWithSubTransfersDirection
 	Status    SrsInternalControllerGetSrsTransferRequestsWithSubTransfersStatus
+}
+
+// WithdrawalsExternalControllerGetWithdrawalByIdParams is parameters of WithdrawalsExternalController_getWithdrawalById operation.
+type WithdrawalsExternalControllerGetWithdrawalByIdParams struct {
+	// UUID of the withdrawal to retrieve.
+	UUID string
+}
+
+// WithdrawalsExternalControllerListWithdrawalsByAccountParams is parameters of WithdrawalsExternalController_listWithdrawalsByAccount operation.
+type WithdrawalsExternalControllerListWithdrawalsByAccountParams struct {
+	// Page number for pagination (1-indexed).
+	Page OptFloat64
+	// Number of items per page (1-100).
+	Limit OptFloat64
+	// UUID of the portfolio from which the withdrawal is made.
+	PortfolioUuid OptString
+}
+
+// WithdrawalsInternalControllerAllowedCurrenciesParams is parameters of WithdrawalsInternalController_allowedCurrencies operation.
+type WithdrawalsInternalControllerAllowedCurrenciesParams struct {
+	UserId   string
+	GoalType string
+}
+
+// WithdrawalsInternalControllerGetWithdrawalByIdParams is parameters of WithdrawalsInternalController_getWithdrawalById operation.
+type WithdrawalsInternalControllerGetWithdrawalByIdParams struct {
+	// UUID of the withdrawal to retrieve.
+	UUID string
+	// UUID of the account initiating the withdrawal.
+	AccountUuid OptString
+}
+
+// WithdrawalsInternalControllerListWithdrawalsByAccountParams is parameters of WithdrawalsInternalController_listWithdrawalsByAccount operation.
+type WithdrawalsInternalControllerListWithdrawalsByAccountParams struct {
+	// Page number for pagination (1-indexed).
+	Page OptFloat64
+	// Number of items per page (1-100).
+	Limit OptFloat64
+	// UUID of the portfolio from which the withdrawal is made.
+	PortfolioUuid OptString
+	// UUID of the account initiating the withdrawal.
+	AccountUuid string
 }

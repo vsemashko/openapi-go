@@ -118,6 +118,37 @@ func (s *BatchWithdrawalApprovalResponseDto) Validate() error {
 	return nil
 }
 
+func (s *CancelIntergoalTransferDTO) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := (validate.String{
+			MinLength:    5,
+			MinLengthSet: true,
+			MaxLength:    500,
+			MaxLengthSet: true,
+			Email:        false,
+			Hostname:     false,
+			Regex:        nil,
+		}).Validate(string(s.Reason)); err != nil {
+			return errors.Wrap(err, "string")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "reason",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
 func (s *CreateDepositScheduleDto) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -336,6 +367,154 @@ func (s CreateDepositScheduleRequestDtoScheduleType) Validate() error {
 	case "RECURRING":
 		return nil
 	case "INSTANT":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *CreateWithdrawalBodyInternalDTO) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.PortfolioType.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "portfolioType",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := (validate.Float{}).Validate(float64(s.RequestedAmount)); err != nil {
+			return errors.Wrap(err, "float")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "requestedAmount",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := (validate.String{
+			MinLength:    3,
+			MinLengthSet: true,
+			MaxLength:    3,
+			MaxLengthSet: true,
+			Email:        false,
+			Hostname:     false,
+			Regex:        nil,
+		}).Validate(string(s.RequestedCurrency)); err != nil {
+			return errors.Wrap(err, "string")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "requestedCurrency",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Type.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "type",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.RequestedRedemptionExtent.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "requestedRedemptionExtent",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s CreateWithdrawalBodyInternalDTOPortfolioType) Validate() error {
+	switch s {
+	case "RETIREMENT":
+		return nil
+	case "BUY_A_HOME":
+		return nil
+	case "CHILD_EDUCATION":
+		return nil
+	case "EMERGENCY_FUND":
+		return nil
+	case "START_BUSINESS":
+		return nil
+	case "VEHICLE":
+		return nil
+	case "WEDDING":
+		return nil
+	case "TRAVEL":
+		return nil
+	case "GENERAL_INVESTING":
+		return nil
+	case "INCOME":
+		return nil
+	case "MMF":
+		return nil
+	case "CPFISOA":
+		return nil
+	case "THEME_TECH":
+		return nil
+	case "THEME_CONSUMER":
+		return nil
+	case "THEME_HEALTHCARE":
+		return nil
+	case "THEME_ENVIRONMENT":
+		return nil
+	case "ESG":
+		return nil
+	case "CUSTOM":
+		return nil
+	case "CRYPTO_YIELD":
+		return nil
+	case "BLACKROCK":
+		return nil
+	case "SIMPLEPLUS":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s CreateWithdrawalBodyInternalDTORequestedRedemptionExtent) Validate() error {
+	switch s {
+	case "FULL":
+		return nil
+	case "PARTIAL":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s CreateWithdrawalBodyInternalDTOType) Validate() error {
+	switch s {
+	case "AUTO_PAYOUT_WITHDRAWAL":
+		return nil
+	case "WITHDRAWAL_BY_CUSTOMER":
+		return nil
+	case "WITHDRAWAL_BY_OPS":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
@@ -1047,6 +1226,40 @@ func (s *LeanPaymentIntentInputDto) Validate() error {
 	return nil
 }
 
+func (s *ListWithdrawalsResponseDTO) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if s.Data == nil {
+			return errors.New("nil is invalid value")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "data",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Meta.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "meta",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
 func (s *Money) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -1061,6 +1274,62 @@ func (s *Money) Validate() error {
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
 			Name:  "amount",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *OffsetBasedPaginationMetaDTO) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := (validate.Float{}).Validate(float64(s.CurrentPage)); err != nil {
+			return errors.Wrap(err, "float")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "currentPage",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := (validate.Float{}).Validate(float64(s.ItemsPerPage)); err != nil {
+			return errors.Wrap(err, "float")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "itemsPerPage",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := (validate.Float{}).Validate(float64(s.TotalItems)); err != nil {
+			return errors.Wrap(err, "float")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "totalItems",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := (validate.Float{}).Validate(float64(s.TotalPages)); err != nil {
+			return errors.Wrap(err, "float")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "totalPages",
 			Error: err,
 		})
 	}
@@ -1181,29 +1450,6 @@ func (s *SrsSubTransfer) Validate() error {
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
 			Name:  "withdrawalCostBasisForBank",
-			Error: err,
-		})
-	}
-	if len(failures) > 0 {
-		return &validate.Error{Fields: failures}
-	}
-	return nil
-}
-
-func (s *SrsSubTransferWithdrawalCostBasisForBank) Validate() error {
-	if s == nil {
-		return validate.ErrNilPointer
-	}
-
-	var failures []validate.FieldError
-	if err := func() error {
-		if err := (validate.Float{}).Validate(float64(s.Amount)); err != nil {
-			return errors.Wrap(err, "float")
-		}
-		return nil
-	}(); err != nil {
-		failures = append(failures, validate.FieldError{
-			Name:  "amount",
 			Error: err,
 		})
 	}
@@ -1345,29 +1591,6 @@ func (s StartIGTRequestWorkflowRequestDTORequestType) Validate() error {
 	}
 }
 
-func (s *StartIGTRequestWorkflowRequestDTORequestedAmount) Validate() error {
-	if s == nil {
-		return validate.ErrNilPointer
-	}
-
-	var failures []validate.FieldError
-	if err := func() error {
-		if err := (validate.Float{}).Validate(float64(s.Amount)); err != nil {
-			return errors.Wrap(err, "float")
-		}
-		return nil
-	}(); err != nil {
-		failures = append(failures, validate.FieldError{
-			Name:  "amount",
-			Error: err,
-		})
-	}
-	if len(failures) > 0 {
-		return &validate.Error{Fields: failures}
-	}
-	return nil
-}
-
 func (s StartIGTRequestWorkflowRequestDTOScheduleType) Validate() error {
 	switch s {
 	case "ONE_TIME":
@@ -1468,29 +1691,6 @@ func (s StartIGTRequestWorkflowSuccessResponseDTORequestType) Validate() error {
 	default:
 		return errors.Errorf("invalid value: %v", s)
 	}
-}
-
-func (s *StartIGTRequestWorkflowSuccessResponseDTORequestedAmount) Validate() error {
-	if s == nil {
-		return validate.ErrNilPointer
-	}
-
-	var failures []validate.FieldError
-	if err := func() error {
-		if err := (validate.Float{}).Validate(float64(s.Amount)); err != nil {
-			return errors.Wrap(err, "float")
-		}
-		return nil
-	}(); err != nil {
-		failures = append(failures, validate.FieldError{
-			Name:  "amount",
-			Error: err,
-		})
-	}
-	if len(failures) > 0 {
-		return &validate.Error{Fields: failures}
-	}
-	return nil
 }
 
 func (s StartIGTRequestWorkflowSuccessResponseDTOScheduleType) Validate() error {

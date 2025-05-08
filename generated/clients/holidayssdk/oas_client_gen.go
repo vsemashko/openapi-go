@@ -78,11 +78,6 @@ func NewClient(serverURL string, opts ...ClientOption) (*Client, error) {
 		baseClient: c,
 	}, nil
 }
-// NewInternalClient is an alias for NewClient for consistency with other SDKs
-// This client doesn't require authentication for internal endpoints
-func NewInternalClient(serverURL string, opts ...ClientOption) (*Client, error) {
-	return NewClient(serverURL, opts...)
-}
 
 type serverURLKey struct{}
 

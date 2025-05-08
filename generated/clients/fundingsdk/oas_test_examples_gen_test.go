@@ -40,8 +40,8 @@ func TestAnonymizePiiRequestDTO_EncodeDecode(t *testing.T) {
 	var typ2 AnonymizePiiRequestDTO
 	require.NoError(t, typ2.Decode(jx.DecodeBytes(data)))
 }
-func TestAnonymizePiiRequestDTOUser_EncodeDecode(t *testing.T) {
-	var typ AnonymizePiiRequestDTOUser
+func TestAnonymizePiiUserRequestDto_EncodeDecode(t *testing.T) {
+	var typ AnonymizePiiUserRequestDto
 	typ.SetFake()
 
 	e := jx.Encoder{}
@@ -49,7 +49,7 @@ func TestAnonymizePiiRequestDTOUser_EncodeDecode(t *testing.T) {
 	data := e.Bytes()
 	require.True(t, std.Valid(data), "Encoded: %s", data)
 
-	var typ2 AnonymizePiiRequestDTOUser
+	var typ2 AnonymizePiiUserRequestDto
 	require.NoError(t, typ2.Decode(jx.DecodeBytes(data)))
 }
 func TestBankAccountDestination_EncodeDecode(t *testing.T) {
@@ -151,6 +151,18 @@ func TestBatchWithdrawalApprovalResponseDto_EncodeDecode(t *testing.T) {
 	require.True(t, std.Valid(data), "Encoded: %s", data)
 
 	var typ2 BatchWithdrawalApprovalResponseDto
+	require.NoError(t, typ2.Decode(jx.DecodeBytes(data)))
+}
+func TestCancelIntergoalTransferDTO_EncodeDecode(t *testing.T) {
+	var typ CancelIntergoalTransferDTO
+	typ.SetFake()
+
+	e := jx.Encoder{}
+	typ.Encode(&e)
+	data := e.Bytes()
+	require.True(t, std.Valid(data), "Encoded: %s", data)
+
+	var typ2 CancelIntergoalTransferDTO
 	require.NoError(t, typ2.Decode(jx.DecodeBytes(data)))
 }
 func TestCancellationCallbackDto_EncodeDecode(t *testing.T) {
@@ -285,6 +297,165 @@ func TestCreateWhitelistedCustomerBankRequestDto_EncodeDecode(t *testing.T) {
 	var typ2 CreateWhitelistedCustomerBankRequestDto
 	require.NoError(t, typ2.Decode(jx.DecodeBytes(data)))
 }
+func TestCreateWithdrawalBodyInternalDTO_EncodeDecode(t *testing.T) {
+	var typ CreateWithdrawalBodyInternalDTO
+	typ.SetFake()
+
+	e := jx.Encoder{}
+	typ.Encode(&e)
+	data := e.Bytes()
+	require.True(t, std.Valid(data), "Encoded: %s", data)
+
+	var typ2 CreateWithdrawalBodyInternalDTO
+	require.NoError(t, typ2.Decode(jx.DecodeBytes(data)))
+}
+func TestCreateWithdrawalBodyInternalDTOPortfolioType_EncodeDecode(t *testing.T) {
+	var typ CreateWithdrawalBodyInternalDTOPortfolioType
+	typ.SetFake()
+
+	e := jx.Encoder{}
+	typ.Encode(&e)
+	data := e.Bytes()
+	require.True(t, std.Valid(data), "Encoded: %s", data)
+
+	var typ2 CreateWithdrawalBodyInternalDTOPortfolioType
+	require.NoError(t, typ2.Decode(jx.DecodeBytes(data)))
+}
+
+func TestCreateWithdrawalBodyInternalDTOPortfolioType_Examples(t *testing.T) {
+
+	for i, tc := range []struct {
+		Input string
+	}{
+		{Input: "\"GENERAL_INVESTING\""},
+	} {
+		tc := tc
+		t.Run(fmt.Sprintf("Test%d", i+1), func(t *testing.T) {
+			var typ CreateWithdrawalBodyInternalDTOPortfolioType
+
+			if err := typ.Decode(jx.DecodeStr(tc.Input)); err != nil {
+				if validateErr, ok := errors.Into[*validate.Error](err); ok {
+					t.Skipf("Validation error: %v", validateErr)
+					return
+				}
+				require.NoErrorf(t, err, "Input: %s", tc.Input)
+			}
+
+			e := jx.Encoder{}
+			typ.Encode(&e)
+			require.True(t, std.Valid(e.Bytes()), "Encoded: %s", e.Bytes())
+
+			var typ2 CreateWithdrawalBodyInternalDTOPortfolioType
+			require.NoError(t, typ2.Decode(jx.DecodeBytes(e.Bytes())))
+		})
+	}
+}
+func TestCreateWithdrawalBodyInternalDTORequestedRedemptionExtent_EncodeDecode(t *testing.T) {
+	var typ CreateWithdrawalBodyInternalDTORequestedRedemptionExtent
+	typ.SetFake()
+
+	e := jx.Encoder{}
+	typ.Encode(&e)
+	data := e.Bytes()
+	require.True(t, std.Valid(data), "Encoded: %s", data)
+
+	var typ2 CreateWithdrawalBodyInternalDTORequestedRedemptionExtent
+	require.NoError(t, typ2.Decode(jx.DecodeBytes(data)))
+}
+
+func TestCreateWithdrawalBodyInternalDTORequestedRedemptionExtent_Examples(t *testing.T) {
+
+	for i, tc := range []struct {
+		Input string
+	}{
+		{Input: "\"PARTIAL\""},
+	} {
+		tc := tc
+		t.Run(fmt.Sprintf("Test%d", i+1), func(t *testing.T) {
+			var typ CreateWithdrawalBodyInternalDTORequestedRedemptionExtent
+
+			if err := typ.Decode(jx.DecodeStr(tc.Input)); err != nil {
+				if validateErr, ok := errors.Into[*validate.Error](err); ok {
+					t.Skipf("Validation error: %v", validateErr)
+					return
+				}
+				require.NoErrorf(t, err, "Input: %s", tc.Input)
+			}
+
+			e := jx.Encoder{}
+			typ.Encode(&e)
+			require.True(t, std.Valid(e.Bytes()), "Encoded: %s", e.Bytes())
+
+			var typ2 CreateWithdrawalBodyInternalDTORequestedRedemptionExtent
+			require.NoError(t, typ2.Decode(jx.DecodeBytes(e.Bytes())))
+		})
+	}
+}
+func TestCreateWithdrawalBodyInternalDTOType_EncodeDecode(t *testing.T) {
+	var typ CreateWithdrawalBodyInternalDTOType
+	typ.SetFake()
+
+	e := jx.Encoder{}
+	typ.Encode(&e)
+	data := e.Bytes()
+	require.True(t, std.Valid(data), "Encoded: %s", data)
+
+	var typ2 CreateWithdrawalBodyInternalDTOType
+	require.NoError(t, typ2.Decode(jx.DecodeBytes(data)))
+}
+
+func TestCreateWithdrawalBodyInternalDTOType_Examples(t *testing.T) {
+
+	for i, tc := range []struct {
+		Input string
+	}{
+		{Input: "\"WITHDRAWAL_BY_CUSTOMER\""},
+	} {
+		tc := tc
+		t.Run(fmt.Sprintf("Test%d", i+1), func(t *testing.T) {
+			var typ CreateWithdrawalBodyInternalDTOType
+
+			if err := typ.Decode(jx.DecodeStr(tc.Input)); err != nil {
+				if validateErr, ok := errors.Into[*validate.Error](err); ok {
+					t.Skipf("Validation error: %v", validateErr)
+					return
+				}
+				require.NoErrorf(t, err, "Input: %s", tc.Input)
+			}
+
+			e := jx.Encoder{}
+			typ.Encode(&e)
+			require.True(t, std.Valid(e.Bytes()), "Encoded: %s", e.Bytes())
+
+			var typ2 CreateWithdrawalBodyInternalDTOType
+			require.NoError(t, typ2.Decode(jx.DecodeBytes(e.Bytes())))
+		})
+	}
+}
+func TestCreateWithdrawalResponseDTO_EncodeDecode(t *testing.T) {
+	var typ CreateWithdrawalResponseDTO
+	typ.SetFake()
+
+	e := jx.Encoder{}
+	typ.Encode(&e)
+	data := e.Bytes()
+	require.True(t, std.Valid(data), "Encoded: %s", data)
+
+	var typ2 CreateWithdrawalResponseDTO
+	require.NoError(t, typ2.Decode(jx.DecodeBytes(data)))
+}
+func TestCustomerBankAddress_EncodeDecode(t *testing.T) {
+	var typ CustomerBankAddress
+	typ.SetFake()
+
+	e := jx.Encoder{}
+	typ.Encode(&e)
+	data := e.Bytes()
+	require.True(t, std.Valid(data), "Encoded: %s", data)
+
+	var typ2 CustomerBankAddress
+	require.NoError(t, typ2.Decode(jx.DecodeBytes(data)))
+}
 func TestCustomerBankDto_EncodeDecode(t *testing.T) {
 	var typ CustomerBankDto
 	typ.SetFake()
@@ -295,6 +466,18 @@ func TestCustomerBankDto_EncodeDecode(t *testing.T) {
 	require.True(t, std.Valid(data), "Encoded: %s", data)
 
 	var typ2 CustomerBankDto
+	require.NoError(t, typ2.Decode(jx.DecodeBytes(data)))
+}
+func TestCustomerBankDtoMeta_EncodeDecode(t *testing.T) {
+	var typ CustomerBankDtoMeta
+	typ.SetFake()
+
+	e := jx.Encoder{}
+	typ.Encode(&e)
+	data := e.Bytes()
+	require.True(t, std.Valid(data), "Encoded: %s", data)
+
+	var typ2 CustomerBankDtoMeta
 	require.NoError(t, typ2.Decode(jx.DecodeBytes(data)))
 }
 func TestDepositRecordsInternalControllerGetDepositRecordsReq_EncodeDecode(t *testing.T) {
@@ -574,6 +757,42 @@ func TestDepositScheduleViewStatus_Examples(t *testing.T) {
 		})
 	}
 }
+func TestErrorBadRequestDto_EncodeDecode(t *testing.T) {
+	var typ ErrorBadRequestDto
+	typ.SetFake()
+
+	e := jx.Encoder{}
+	typ.Encode(&e)
+	data := e.Bytes()
+	require.True(t, std.Valid(data), "Encoded: %s", data)
+
+	var typ2 ErrorBadRequestDto
+	require.NoError(t, typ2.Decode(jx.DecodeBytes(data)))
+}
+func TestErrorInternalServerDto_EncodeDecode(t *testing.T) {
+	var typ ErrorInternalServerDto
+	typ.SetFake()
+
+	e := jx.Encoder{}
+	typ.Encode(&e)
+	data := e.Bytes()
+	require.True(t, std.Valid(data), "Encoded: %s", data)
+
+	var typ2 ErrorInternalServerDto
+	require.NoError(t, typ2.Decode(jx.DecodeBytes(data)))
+}
+func TestErrorNotFoundDto_EncodeDecode(t *testing.T) {
+	var typ ErrorNotFoundDto
+	typ.SetFake()
+
+	e := jx.Encoder{}
+	typ.Encode(&e)
+	data := e.Bytes()
+	require.True(t, std.Valid(data), "Encoded: %s", data)
+
+	var typ2 ErrorNotFoundDto
+	require.NoError(t, typ2.Decode(jx.DecodeBytes(data)))
+}
 func TestExternalSubmitWithdrawalRequestsInputDto_EncodeDecode(t *testing.T) {
 	var typ ExternalSubmitWithdrawalRequestsInputDto
 	typ.SetFake()
@@ -783,6 +1002,18 @@ func TestGetRetailBanksListResponse_EncodeDecode(t *testing.T) {
 	var typ2 GetRetailBanksListResponse
 	require.NoError(t, typ2.Decode(jx.DecodeBytes(data)))
 }
+func TestGetWithdrawalResponseDTO_EncodeDecode(t *testing.T) {
+	var typ GetWithdrawalResponseDTO
+	typ.SetFake()
+
+	e := jx.Encoder{}
+	typ.Encode(&e)
+	data := e.Bytes()
+	require.True(t, std.Valid(data), "Encoded: %s", data)
+
+	var typ2 GetWithdrawalResponseDTO
+	require.NoError(t, typ2.Decode(jx.DecodeBytes(data)))
+}
 func TestInitMandateSetupRequestDTO_EncodeDecode(t *testing.T) {
 	var typ InitMandateSetupRequestDTO
 	typ.SetFake()
@@ -867,6 +1098,18 @@ func TestInternalSubmitWithdrawalRequestsInputDtoWithdrawalType_EncodeDecode(t *
 	var typ2 InternalSubmitWithdrawalRequestsInputDtoWithdrawalType
 	require.NoError(t, typ2.Decode(jx.DecodeBytes(data)))
 }
+func TestLeanCustomer_EncodeDecode(t *testing.T) {
+	var typ LeanCustomer
+	typ.SetFake()
+
+	e := jx.Encoder{}
+	typ.Encode(&e)
+	data := e.Bytes()
+	require.True(t, std.Valid(data), "Encoded: %s", data)
+
+	var typ2 LeanCustomer
+	require.NoError(t, typ2.Decode(jx.DecodeBytes(data)))
+}
 func TestLeanPaymentIntentCancelInputDto_EncodeDecode(t *testing.T) {
 	var typ LeanPaymentIntentCancelInputDto
 	typ.SetFake()
@@ -927,6 +1170,18 @@ func TestLeanUnlinkBankDto_EncodeDecode(t *testing.T) {
 	var typ2 LeanUnlinkBankDto
 	require.NoError(t, typ2.Decode(jx.DecodeBytes(data)))
 }
+func TestListWithdrawalsResponseDTO_EncodeDecode(t *testing.T) {
+	var typ ListWithdrawalsResponseDTO
+	typ.SetFake()
+
+	e := jx.Encoder{}
+	typ.Encode(&e)
+	data := e.Bytes()
+	require.True(t, std.Valid(data), "Encoded: %s", data)
+
+	var typ2 ListWithdrawalsResponseDTO
+	require.NoError(t, typ2.Decode(jx.DecodeBytes(data)))
+}
 func TestMoney_EncodeDecode(t *testing.T) {
 	var typ Money
 	typ.SetFake()
@@ -937,6 +1192,18 @@ func TestMoney_EncodeDecode(t *testing.T) {
 	require.True(t, std.Valid(data), "Encoded: %s", data)
 
 	var typ2 Money
+	require.NoError(t, typ2.Decode(jx.DecodeBytes(data)))
+}
+func TestOffsetBasedPaginationMetaDTO_EncodeDecode(t *testing.T) {
+	var typ OffsetBasedPaginationMetaDTO
+	typ.SetFake()
+
+	e := jx.Encoder{}
+	typ.Encode(&e)
+	data := e.Bytes()
+	require.True(t, std.Valid(data), "Encoded: %s", data)
+
+	var typ2 OffsetBasedPaginationMetaDTO
 	require.NoError(t, typ2.Decode(jx.DecodeBytes(data)))
 }
 func TestOriginalTransferSourceAsDestination_EncodeDecode(t *testing.T) {
@@ -973,18 +1240,6 @@ func TestSrsSubTransfer_EncodeDecode(t *testing.T) {
 	require.True(t, std.Valid(data), "Encoded: %s", data)
 
 	var typ2 SrsSubTransfer
-	require.NoError(t, typ2.Decode(jx.DecodeBytes(data)))
-}
-func TestSrsSubTransferWithdrawalCostBasisForBank_EncodeDecode(t *testing.T) {
-	var typ SrsSubTransferWithdrawalCostBasisForBank
-	typ.SetFake()
-
-	e := jx.Encoder{}
-	typ.Encode(&e)
-	data := e.Bytes()
-	require.True(t, std.Valid(data), "Encoded: %s", data)
-
-	var typ2 SrsSubTransferWithdrawalCostBasisForBank
 	require.NoError(t, typ2.Decode(jx.DecodeBytes(data)))
 }
 func TestSrsTransferRequestSubtransfers_EncodeDecode(t *testing.T) {
@@ -1063,18 +1318,6 @@ func TestStartIGTRequestWorkflowRequestDTORequestType_Examples(t *testing.T) {
 			require.NoError(t, typ2.Decode(jx.DecodeBytes(e.Bytes())))
 		})
 	}
-}
-func TestStartIGTRequestWorkflowRequestDTORequestedAmount_EncodeDecode(t *testing.T) {
-	var typ StartIGTRequestWorkflowRequestDTORequestedAmount
-	typ.SetFake()
-
-	e := jx.Encoder{}
-	typ.Encode(&e)
-	data := e.Bytes()
-	require.True(t, std.Valid(data), "Encoded: %s", data)
-
-	var typ2 StartIGTRequestWorkflowRequestDTORequestedAmount
-	require.NoError(t, typ2.Decode(jx.DecodeBytes(data)))
 }
 func TestStartIGTRequestWorkflowRequestDTOScheduleType_EncodeDecode(t *testing.T) {
 	var typ StartIGTRequestWorkflowRequestDTOScheduleType
@@ -1252,18 +1495,6 @@ func TestStartIGTRequestWorkflowSuccessResponseDTORequestType_Examples(t *testin
 		})
 	}
 }
-func TestStartIGTRequestWorkflowSuccessResponseDTORequestedAmount_EncodeDecode(t *testing.T) {
-	var typ StartIGTRequestWorkflowSuccessResponseDTORequestedAmount
-	typ.SetFake()
-
-	e := jx.Encoder{}
-	typ.Encode(&e)
-	data := e.Bytes()
-	require.True(t, std.Valid(data), "Encoded: %s", data)
-
-	var typ2 StartIGTRequestWorkflowSuccessResponseDTORequestedAmount
-	require.NoError(t, typ2.Decode(jx.DecodeBytes(data)))
-}
 func TestStartIGTRequestWorkflowSuccessResponseDTOScheduleType_EncodeDecode(t *testing.T) {
 	var typ StartIGTRequestWorkflowSuccessResponseDTOScheduleType
 	typ.SetFake()
@@ -1416,6 +1647,18 @@ func TestUpdateWithdrawalAmlStatusDto_EncodeDecode(t *testing.T) {
 	require.True(t, std.Valid(data), "Encoded: %s", data)
 
 	var typ2 UpdateWithdrawalAmlStatusDto
+	require.NoError(t, typ2.Decode(jx.DecodeBytes(data)))
+}
+func TestWithdrawal_EncodeDecode(t *testing.T) {
+	var typ Withdrawal
+	typ.SetFake()
+
+	e := jx.Encoder{}
+	typ.Encode(&e)
+	data := e.Bytes()
+	require.True(t, std.Valid(data), "Encoded: %s", data)
+
+	var typ2 Withdrawal
 	require.NoError(t, typ2.Decode(jx.DecodeBytes(data)))
 }
 func TestWithdrawalRequestDto_EncodeDecode(t *testing.T) {
