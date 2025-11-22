@@ -1,8 +1,9 @@
 # OpenAPI Go SDK Generator - Architecture Improvements
 
-**Version:** 1.0
+**Version:** 1.1
 **Date:** 2025-11-22
 **Purpose:** Long-term architectural recommendations for scalability and maintainability
+**Last Updated:** 2025-11-22 (Preprocessor module removed - OpenAPI 3.1 support deferred)
 
 ---
 
