@@ -244,3 +244,42 @@ func TestMakeAbsolutePathConsistency(t *testing.T) {
 		t.Errorf("MakeAbsolutePath not consistent: %q != %q", result1, result2)
 	}
 }
+
+func TestMakeAbsolutePathEmptyString(t *testing.T) {
+	result := MakeAbsolutePath("")
+
+	// Empty string should return repository root
+	if result != GetRepositoryRoot() {
+		t.Errorf("MakeAbsolutePath(\"\") = %q, want %q", result, GetRepositoryRoot())
+	}
+}
+
+func TestEnsurePathExistsFile(t *testing.T) {
+	// Create a temp file
+	tmpFile := filepath.Join(t.TempDir(), "test.txt")
+	if err := os.WriteFile(tmpFile, []byte("test"), 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	// EnsurePathExists should work for files too
+	err := EnsurePathExists(tmpFile)
+	if err != nil {
+		t.Errorf("EnsurePathExists() failed for existing file: %v", err)
+	}
+}
+
+func TestEnsureDirectoryWritableAlreadyExists(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Directory already exists and is writable
+	err := EnsureDirectoryWritable(tmpDir)
+	if err != nil {
+		t.Errorf("EnsureDirectoryWritable() failed for existing writable directory: %v", err)
+	}
+
+	// Verify we can still write to it
+	testFile := filepath.Join(tmpDir, "test.txt")
+	if err := os.WriteFile(testFile, []byte("test"), 0644); err != nil {
+		t.Errorf("Directory not writable after EnsureDirectoryWritable: %v", err)
+	}
+}

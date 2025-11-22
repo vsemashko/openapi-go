@@ -240,6 +240,63 @@ func TestContinueOnErrorEnabled(t *testing.T) {
 	}
 }
 
+func TestLogConfiguration(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	cfg := Config{
+		SpecsDir:        tmpDir,
+		OutputDir:       filepath.Join(tmpDir, "output"),
+		TargetServices:  "(service1|service2)",
+		ContinueOnError: true,
+	}
+
+	// This function only logs, so we just verify it doesn't panic
+	defer func() {
+		if r := recover(); r != nil {
+			t.Errorf("LogConfiguration() panicked: %v", r)
+		}
+	}()
+
+	LogConfiguration(cfg)
+}
+
+func TestConfigValidationOutputDirCreation(t *testing.T) {
+	tmpDir := t.TempDir()
+	nonExistentOutput := filepath.Join(tmpDir, "deep", "nested", "output")
+
+	cfg := Config{
+		SpecsDir:  tmpDir,
+		OutputDir: nonExistentOutput,
+	}
+
+	err := cfg.Validate()
+	if err != nil {
+		t.Fatalf("Validate() unexpected error: %v", err)
+	}
+
+	// Verify directory was created
+	if _, err := os.Stat(nonExistentOutput); os.IsNotExist(err) {
+		t.Errorf("Validate() did not create output directory: %s", nonExistentOutput)
+	}
+}
+
+func TestConfigValidationBothFieldsEmpty(t *testing.T) {
+	cfg := Config{
+		SpecsDir:  "",
+		OutputDir: "",
+	}
+
+	err := cfg.Validate()
+	if err == nil {
+		t.Error("Validate() should error when both SpecsDir and OutputDir are empty")
+	}
+
+	// Should error on specs_dir first
+	if !contains(err.Error(), "specs_dir") {
+		t.Errorf("Error should mention specs_dir, got: %v", err)
+	}
+}
+
 // Helper function to check if string contains substring
 func contains(s, substr string) bool {
 	return len(s) >= len(substr) && (s == substr || len(substr) == 0 ||
