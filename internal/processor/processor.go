@@ -562,22 +562,19 @@ func validateSpecs(specs []string, validatorCfg config.ValidatorConfig, continue
 	for _, result := range results {
 		if !result.Valid {
 			hasErrors = true
-			// Log detailed validation results for failed specs
-			log.Printf("\n%s", validator.FormatValidationResult(result))
+			// Log detailed validation results with enhanced formatting
+			log.Printf("\n%s", validator.FormatValidationResultEnhanced(result))
 		} else if len(result.Warnings) > 0 {
-			// Log warnings even for valid specs
-			log.Printf("\nValidation warnings for %s:", result.SpecInfo.Path)
-			for _, warning := range result.Warnings {
-				log.Printf("  [%s] %s: %s", warning.Code, warning.Field, warning.Message)
-			}
+			// Use enhanced formatting for warnings too
+			log.Printf("\n%s", validator.FormatValidationResultEnhanced(result))
 		}
 	}
 
 	if hasErrors {
 		if !continueOnError {
-			return fmt.Errorf("validation failed for one or more specs (see logs above)")
+			return fmt.Errorf("validation failed for one or more specs (see detailed errors above)")
 		}
-		log.Printf("Warning: Some specs failed validation but continuing due to continue_on_error=true")
+		log.Printf("⚠️  Warning: Some specs failed validation but continuing due to continue_on_error=true")
 	}
 
 	return nil

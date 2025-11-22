@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"strings"
 
+	"gitlab.stashaway.com/vladimir.semashko/openapi-go/internal/errors"
 	"gitlab.stashaway.com/vladimir.semashko/openapi-go/internal/paths"
 )
 
@@ -64,6 +65,7 @@ func (g *OgenGenerator) IsInstalled() bool {
 }
 
 // EnsureInstalled ensures the ogen CLI is installed with the correct version
+// Uses retry logic with exponential backoff for network failures
 func (g *OgenGenerator) EnsureInstalled(ctx context.Context) error {
 	// Check if already installed with correct version
 	if g.IsInstalled() {
@@ -73,19 +75,34 @@ func (g *OgenGenerator) EnsureInstalled(ctx context.Context) error {
 
 	log.Printf("Installing ogen CLI %s...", g.version)
 
-	// Install specific version (not @latest for deterministic builds)
-	cmd := exec.CommandContext(ctx, "go", "install", fmt.Sprintf("%s@%s", g.pkg, g.version))
-	output, err := cmd.CombinedOutput()
+	// Install with retry logic for transient failures (network issues)
+	err := errors.RetryableOperation(ctx, "install ogen", func() error {
+		// Install specific version (not @latest for deterministic builds)
+		cmd := exec.CommandContext(ctx, "go", "install", fmt.Sprintf("%s@%s", g.pkg, g.version))
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			// Wrap error with structured error type
+			return errors.Wrap(err, errors.ErrCodeGeneratorInstall,
+				fmt.Sprintf("failed to install ogen %s", g.version)).
+				WithContext("output", string(output)).
+				WithSuggestion("Check your network connection and Go installation")
+		}
+
+		// Verify installation succeeded
+		if !g.IsInstalled() {
+			return errors.New(errors.ErrCodeGeneratorInstall,
+				"ogen installation verification failed").
+				WithSuggestion("Try running: go install "+g.pkg+"@"+g.version)
+		}
+
+		return nil
+	})
+
 	if err != nil {
-		return fmt.Errorf("failed to install ogen: %w\nOutput: %s", err, string(output))
+		return err
 	}
 
-	// Verify installation succeeded
-	if !g.IsInstalled() {
-		return fmt.Errorf("ogen installation verification failed")
-	}
-
-	log.Printf("ogen CLI %s installed successfully", g.version)
+	log.Printf("✅ ogen CLI %s installed successfully", g.version)
 	return nil
 }
 
@@ -93,12 +110,14 @@ func (g *OgenGenerator) EnsureInstalled(ctx context.Context) error {
 func (g *OgenGenerator) Generate(ctx context.Context, spec GenerateSpec) error {
 	// Ensure ogen is installed
 	if err := g.EnsureInstalled(ctx); err != nil {
-		return fmt.Errorf("failed to ensure ogen is installed: %w", err)
+		return errors.Wrap(err, errors.ErrCodeGeneratorNotFound, "ogen CLI not available")
 	}
 
 	// Validate spec path
 	if err := paths.EnsurePathExists(spec.SpecPath); err != nil {
-		return fmt.Errorf("spec file not found: %w", err)
+		return errors.Wrap(err, errors.ErrCodeFileNotFound, "spec file not found").
+			WithContext("spec", spec.SpecPath).
+			WithSuggestion("Check if the OpenAPI spec file exists at the specified path")
 	}
 
 	// Validate config path if provided
@@ -107,7 +126,9 @@ func (g *OgenGenerator) Generate(ctx context.Context, spec GenerateSpec) error {
 		configPath = paths.GetOgenConfigPath()
 	}
 	if err := paths.EnsurePathExists(configPath); err != nil {
-		return fmt.Errorf("ogen config not found: %w", err)
+		return errors.Wrap(err, errors.ErrCodeConfigMissing, "ogen config not found").
+			WithContext("config", configPath).
+			WithSuggestion("Create ogen config file or check the path")
 	}
 
 	// Build command arguments
@@ -130,8 +151,13 @@ func (g *OgenGenerator) Generate(ctx context.Context, spec GenerateSpec) error {
 	// Capture output for better error messages
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("ogen failed for %s: %w\nOutput: %s",
-			spec.PackageName, err, string(output))
+		// Create structured error with ogen output in context
+		return errors.Wrap(err, errors.ErrCodeGeneratorFailed,
+			fmt.Sprintf("ogen failed for package %s", spec.PackageName)).
+			WithContext("package", spec.PackageName).
+			WithContext("spec", spec.SpecPath).
+			WithContext("ogen_error", string(output)).
+			WithSuggestion("Check the ogen error message above for specific issues")
 	}
 
 	// Log ogen output
