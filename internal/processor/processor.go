@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"sync"
 
+	"gitlab.stashaway.com/vladimir.semashko/openapi-go/internal/cache"
 	"gitlab.stashaway.com/vladimir.semashko/openapi-go/internal/config"
 	"gitlab.stashaway.com/vladimir.semashko/openapi-go/internal/generator"
 	"gitlab.stashaway.com/vladimir.semashko/openapi-go/internal/paths"
@@ -56,8 +57,26 @@ func ProcessOpenAPISpecs(ctx context.Context, cfg config.Config) error {
 		return err
 	}
 
+	// Initialize cache if enabled
+	var specCache *cache.Cache
+	if cfg.EnableCache {
+		specCache, err = cache.NewCache(cache.Config{CacheDir: cfg.CacheDir})
+		if err != nil {
+			log.Printf("Warning: Failed to initialize cache, proceeding without caching: %v", err)
+			specCache = nil
+		} else {
+			// Prune invalid cache entries
+			pruned, err := specCache.PruneInvalid()
+			if err != nil {
+				log.Printf("Warning: Failed to prune cache: %v", err)
+			} else if pruned > 0 {
+				log.Printf("Pruned %d invalid cache entries", pruned)
+			}
+		}
+	}
+
 	// Generate clients in parallel
-	result, err := generateClients(ctx, specs, cfg.OutputDir, cfg.ContinueOnError, cfg.WorkerCount)
+	result, err := generateClients(ctx, specs, cfg.OutputDir, cfg.ContinueOnError, cfg.WorkerCount, specCache)
 	if err != nil {
 		return err
 	}
@@ -113,7 +132,7 @@ func findOpenAPISpecs(specsDir string, targetServices string) ([]string, error) 
 }
 
 // generateClients generates clients for all found OpenAPI specs using parallel processing.
-func generateClients(ctx context.Context, specs []string, outputDir string, continueOnError bool, workerCount int) (*ProcessingResult, error) {
+func generateClients(ctx context.Context, specs []string, outputDir string, continueOnError bool, workerCount int, specCache *cache.Cache) (*ProcessingResult, error) {
 	result := &ProcessingResult{
 		TotalSpecs:   len(specs),
 		SuccessCount: 0,
@@ -122,7 +141,7 @@ func generateClients(ctx context.Context, specs []string, outputDir string, cont
 
 	// If only one spec or worker count is 1, process sequentially
 	if len(specs) == 1 || workerCount == 1 {
-		return generateClientsSequential(ctx, specs, outputDir, continueOnError)
+		return generateClientsSequential(ctx, specs, outputDir, continueOnError, specCache)
 	}
 
 	log.Printf("Processing %d specs with %d parallel workers", len(specs), workerCount)
@@ -145,8 +164,33 @@ func generateClients(ctx context.Context, specs []string, outputDir string, cont
 		task := worker.Task{
 			ID: serviceName,
 			Execute: func(taskCtx context.Context) error {
+				// Check cache if available
+				if specCache != nil {
+					valid, err := specCache.IsValid(currentSpecPath, defaultGenerator.Version())
+					if err != nil {
+						log.Printf("Warning: Cache check failed for %s: %v", serviceName, err)
+					} else if valid {
+						log.Printf("⚡ Using cached client for %s (spec unchanged)", folderName)
+						return nil
+					}
+				}
+
 				log.Printf("Processing service: %s (spec: %s)", serviceName, currentSpecPath)
-				return generateClientForSpec(taskCtx, currentSpecPath, serviceName, folderName, outputDir)
+				clientPath := filepath.Join(outputDir, "clients", folderName)
+
+				// Generate client
+				if err := generateClientForSpec(taskCtx, currentSpecPath, serviceName, folderName, outputDir); err != nil {
+					return err
+				}
+
+				// Update cache on success
+				if specCache != nil {
+					if err := specCache.Set(currentSpecPath, clientPath, serviceName, defaultGenerator.Version()); err != nil {
+						log.Printf("Warning: Failed to update cache for %s: %v", serviceName, err)
+					}
+				}
+
+				return nil
 			},
 		}
 		tasks = append(tasks, task)
@@ -201,7 +245,7 @@ func generateClients(ctx context.Context, specs []string, outputDir string, cont
 }
 
 // generateClientsSequential generates clients sequentially (fallback for single spec or single worker).
-func generateClientsSequential(ctx context.Context, specs []string, outputDir string, continueOnError bool) (*ProcessingResult, error) {
+func generateClientsSequential(ctx context.Context, specs []string, outputDir string, continueOnError bool, specCache *cache.Cache) (*ProcessingResult, error) {
 	result := &ProcessingResult{
 		TotalSpecs:   len(specs),
 		SuccessCount: 0,
@@ -219,6 +263,19 @@ func generateClientsSequential(ctx context.Context, specs []string, outputDir st
 		serviceDir := filepath.Base(filepath.Dir(specPath))
 		serviceName := normalizeServiceName(serviceDir)
 		folderName := serviceName + "sdk"
+		clientPath := filepath.Join(outputDir, "clients", folderName)
+
+		// Check cache if available
+		if specCache != nil {
+			valid, err := specCache.IsValid(specPath, defaultGenerator.Version())
+			if err != nil {
+				log.Printf("Warning: Cache check failed for %s: %v", serviceName, err)
+			} else if valid {
+				log.Printf("⚡ Using cached client for %s (spec unchanged)", folderName)
+				result.SuccessCount++
+				continue
+			}
+		}
 
 		log.Printf("Processing service: %s (spec: %s)", serviceName, specPath)
 
@@ -240,6 +297,13 @@ func generateClientsSequential(ctx context.Context, specs []string, outputDir st
 		} else {
 			result.SuccessCount++
 			log.Printf("✅ Successfully generated client for %s", folderName)
+
+			// Update cache on success
+			if specCache != nil {
+				if err := specCache.Set(specPath, clientPath, serviceName, defaultGenerator.Version()); err != nil {
+					log.Printf("Warning: Failed to update cache for %s: %v", serviceName, err)
+				}
+			}
 		}
 	}
 

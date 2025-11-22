@@ -218,7 +218,7 @@ func TestGenerateClients(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 			defer cancel()
 
-			result, err := generateClients(ctx, specs, outputDir, tt.continueOnError, 4)
+			result, err := generateClients(ctx, specs, outputDir, tt.continueOnError, 4, nil)
 
 			// Check error expectations
 			if (err != nil) != tt.wantErr {

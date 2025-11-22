@@ -23,3 +23,6 @@ coverage.html
 
 # Compiled binary
 /openapi-go
+
+# Cache directory
+.openapi-cache/

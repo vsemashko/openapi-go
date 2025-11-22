@@ -31,6 +31,14 @@ type Config struct {
 	// WorkerCount is the number of parallel workers for spec processing
 	// Default: 4
 	WorkerCount int `mapstructure:"worker_count"`
+
+	// EnableCache enables caching of generated clients to skip regeneration
+	// Default: true
+	EnableCache bool `mapstructure:"enable_cache"`
+
+	// CacheDir is the directory where cache metadata is stored
+	// Default: .openapi-cache
+	CacheDir string `mapstructure:"cache_dir"`
 }
 
 // LoadConfig initializes Viper and loads configuration from application.yml
@@ -72,9 +80,20 @@ func LoadConfig() (Config, error) {
 		cfg.WorkerCount = 4
 	}
 
+	// Set EnableCache default to true (caching enabled by default)
+	// Note: Viper unmarshals false as zero value, so we need explicit handling
+	// If not set in config, enable cache by default
+	v.SetDefault("enable_cache", true)
+	cfg.EnableCache = v.GetBool("enable_cache")
+
+	if cfg.CacheDir == "" {
+		cfg.CacheDir = ".openapi-cache"
+	}
+
 	// Convert relative paths to absolute paths
 	cfg.SpecsDir = paths.MakeAbsolutePath(cfg.SpecsDir)
 	cfg.OutputDir = paths.MakeAbsolutePath(cfg.OutputDir)
+	cfg.CacheDir = paths.MakeAbsolutePath(cfg.CacheDir)
 
 	// Validate configuration
 	if err := cfg.Validate(); err != nil {
@@ -123,5 +142,7 @@ func LogConfiguration(cfg Config) {
 	log.Printf("  Target services: %s", cfg.TargetServices)
 	log.Printf("  Continue on error: %v", cfg.ContinueOnError)
 	log.Printf("  Worker count: %d", cfg.WorkerCount)
+	log.Printf("  Enable cache: %v", cfg.EnableCache)
+	log.Printf("  Cache directory: %s", cfg.CacheDir)
 	log.Printf("  Ogen config: %s", paths.GetOgenConfigPath())
 }
