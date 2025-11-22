@@ -1,185 +1,28 @@
 package processor
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
+
+	"gitlab.stashaway.com/vladimir.semashko/openapi-go/internal/postprocessor"
 )
 
-func TestDetectSecurityFromSpec(t *testing.T) {
+func TestApplyPostProcessors(t *testing.T) {
 	tests := []struct {
-		name        string
-		spec        string
-		expected    bool
-		wantErr     bool
-		errContains string
+		name    string
+		setup   func(string) (clientPath, serviceName, specPath string)
+		wantErr bool
 	}{
 		{
-			name: "spec with bearer auth",
-			spec: `{
-				"openapi": "3.0.0",
-				"info": {"title": "Test", "version": "1.0"},
-				"components": {
-					"securitySchemes": {
-						"bearerAuth": {
-							"type": "http",
-							"scheme": "bearer"
-						}
-					}
-				}
-			}`,
-			expected: true,
-			wantErr:  false,
-		},
-		{
-			name: "spec without security",
-			spec: `{
-				"openapi": "3.0.0",
-				"info": {"title": "Test", "version": "1.0"},
-				"paths": {}
-			}`,
-			expected: false,
-			wantErr:  false,
-		},
-		{
-			name: "spec with global security",
-			spec: `{
-				"openapi": "3.0.0",
-				"info": {"title": "Test", "version": "1.0"},
-				"security": [{"apiKey": []}],
-				"components": {
-					"securitySchemes": {
-						"apiKey": {
-							"type": "apiKey",
-							"in": "header",
-							"name": "X-API-Key"
-						}
-					}
-				}
-			}`,
-			expected: true,
-			wantErr:  false,
-		},
-		{
-			name:        "invalid spec",
-			spec:        `{invalid json}`,
-			expected:    false,
-			wantErr:     true,
-			errContains: "failed to parse spec",
-		},
-		{
-			name: "empty components",
-			spec: `{
-				"openapi": "3.0.0",
-				"info": {"title": "Test", "version": "1.0"},
-				"components": {}
-			}`,
-			expected: false,
-			wantErr:  false,
-		},
-	}
+			name: "valid spec with security",
+			setup: func(tmpDir string) (string, string, string) {
+				clientPath := filepath.Join(tmpDir, "client")
+				os.MkdirAll(clientPath, 0755)
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Write spec to temp file
-			tmpFile := filepath.Join(t.TempDir(), "spec.json")
-			if err := os.WriteFile(tmpFile, []byte(tt.spec), 0644); err != nil {
-				t.Fatalf("Failed to create test file: %v", err)
-			}
-
-			// Test detectSecurityFromSpec
-			hasSecurity, err := detectSecurityFromSpec(tmpFile)
-
-			// Check error expectations
-			if (err != nil) != tt.wantErr {
-				t.Errorf("detectSecurityFromSpec() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-
-			if err != nil && tt.errContains != "" {
-				if !contains(err.Error(), tt.errContains) {
-					t.Errorf("detectSecurityFromSpec() error = %q, should contain %q", err.Error(), tt.errContains)
-				}
-				return
-			}
-
-			// Check result
-			if hasSecurity != tt.expected {
-				t.Errorf("detectSecurityFromSpec() = %v, expected %v", hasSecurity, tt.expected)
-			}
-		})
-	}
-}
-
-func TestDetectSecurityFromSpecNonexistent(t *testing.T) {
-	_, err := detectSecurityFromSpec("/nonexistent/spec.json")
-	if err == nil {
-		t.Error("detectSecurityFromSpec() should error for nonexistent file")
-	}
-}
-
-func TestDetectSecurityFromGeneratedFiles(t *testing.T) {
-	tests := []struct {
-		name     string
-		setup    func(string) error
-		expected bool
-	}{
-		{
-			name: "security file exists",
-			setup: func(dir string) error {
-				securityFile := filepath.Join(dir, "oas_security_gen.go")
-				return os.WriteFile(securityFile, []byte("package test"), 0644)
-			},
-			expected: true,
-		},
-		{
-			name: "security file does not exist",
-			setup: func(dir string) error {
-				// Create other files but not oas_security_gen.go
-				clientFile := filepath.Join(dir, "oas_client_gen.go")
-				return os.WriteFile(clientFile, []byte("package test"), 0644)
-			},
-			expected: false,
-		},
-		{
-			name: "empty directory",
-			setup: func(dir string) error {
-				return nil
-			},
-			expected: false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tmpDir := t.TempDir()
-
-			if tt.setup != nil {
-				if err := tt.setup(tmpDir); err != nil {
-					t.Fatalf("Setup failed: %v", err)
-				}
-			}
-
-			result := detectSecurityFromGeneratedFiles(tmpDir)
-			if result != tt.expected {
-				t.Errorf("detectSecurityFromGeneratedFiles() = %v, expected %v", result, tt.expected)
-			}
-		})
-	}
-}
-
-func TestGenerateInternalClientFile(t *testing.T) {
-	tests := []struct {
-		name        string
-		setupSpec   func(string) (string, error)
-		serviceName string
-		wantErr     bool
-		errContains string
-	}{
-		{
-			name: "spec with security",
-			setupSpec: func(dir string) (string, error) {
-				specPath := filepath.Join(dir, "spec.json")
+				specPath := filepath.Join(tmpDir, "spec.json")
 				spec := `{
 					"openapi": "3.0.0",
 					"info": {"title": "Test", "version": "1.0"},
@@ -192,154 +35,155 @@ func TestGenerateInternalClientFile(t *testing.T) {
 						}
 					}
 				}`
-				err := os.WriteFile(specPath, []byte(spec), 0644)
-				return specPath, err
+				os.WriteFile(specPath, []byte(spec), 0644)
+
+				// Create a sample Go file for formatting
+				os.WriteFile(filepath.Join(clientPath, "test.go"), []byte("package test\n\nfunc Test() {}\n"), 0644)
+
+				return clientPath, "testservice", specPath
 			},
-			serviceName: "testservice",
-			wantErr:     false,
+			wantErr: false,
 		},
 		{
-			name: "spec without security",
-			setupSpec: func(dir string) (string, error) {
-				specPath := filepath.Join(dir, "spec.json")
+			name: "valid spec without security",
+			setup: func(tmpDir string) (string, string, string) {
+				clientPath := filepath.Join(tmpDir, "client")
+				os.MkdirAll(clientPath, 0755)
+
+				specPath := filepath.Join(tmpDir, "spec.json")
 				spec := `{
 					"openapi": "3.0.0",
 					"info": {"title": "Test", "version": "1.0"},
 					"paths": {}
 				}`
-				err := os.WriteFile(specPath, []byte(spec), 0644)
-				return specPath, err
+				os.WriteFile(specPath, []byte(spec), 0644)
+
+				// Create a sample Go file for formatting
+				os.WriteFile(filepath.Join(clientPath, "test.go"), []byte("package test\n\nfunc Test() {}\n"), 0644)
+
+				return clientPath, "testservice", specPath
 			},
-			serviceName: "testservice",
-			wantErr:     false,
-		},
-		{
-			name: "invalid spec path falls back to file check",
-			setupSpec: func(dir string) (string, error) {
-				return "/nonexistent/spec.json", nil
-			},
-			serviceName: "testservice",
-			wantErr:     false, // Function has fallback, so no error
-			errContains: "",
+			wantErr: false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tmpDir := t.TempDir()
-			clientPath := filepath.Join(tmpDir, "client")
-			if err := os.MkdirAll(clientPath, 0755); err != nil {
-				t.Fatalf("Failed to create client directory: %v", err)
-			}
+			clientPath, serviceName, specPath := tt.setup(tmpDir)
 
-			specPath, err := tt.setupSpec(tmpDir)
-			if err != nil {
-				t.Fatalf("Failed to setup spec: %v", err)
-			}
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
 
-			err = generateInternalClientFile(clientPath, tt.serviceName, specPath)
-
-			if (err != nil) != tt.wantErr {
-				t.Errorf("generateInternalClientFile() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-
-			if err != nil && tt.errContains != "" {
-				if !contains(err.Error(), tt.errContains) {
-					t.Errorf("generateInternalClientFile() error = %q, should contain %q", err.Error(), tt.errContains)
-				}
-				return
-			}
-
-			// If successful, verify output file was created
-			if err == nil {
-				outputPath := filepath.Join(clientPath, "oas_internal_client_gen.go")
-				if _, err := os.Stat(outputPath); os.IsNotExist(err) {
-					t.Errorf("Expected output file not created: %s", outputPath)
-				}
-			}
-		})
-	}
-}
-
-func TestApplyPostProcessors(t *testing.T) {
-	tests := []struct {
-		name        string
-		setupSpec   func(string) (string, error)
-		serviceName string
-		wantErr     bool
-	}{
-		{
-			name: "valid spec",
-			setupSpec: func(dir string) (string, error) {
-				specPath := filepath.Join(dir, "spec.json")
-				spec := `{
-					"openapi": "3.0.0",
-					"info": {"title": "Test", "version": "1.0"},
-					"paths": {}
-				}`
-				err := os.WriteFile(specPath, []byte(spec), 0644)
-				return specPath, err
-			},
-			serviceName: "testservice",
-			wantErr:     false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tmpDir := t.TempDir()
-			clientPath := filepath.Join(tmpDir, "client")
-			if err := os.MkdirAll(clientPath, 0755); err != nil {
-				t.Fatalf("Failed to create client directory: %v", err)
-			}
-
-			specPath, err := tt.setupSpec(tmpDir)
-			if err != nil {
-				t.Fatalf("Failed to setup spec: %v", err)
-			}
-
-			err = ApplyPostProcessors(clientPath, tt.serviceName, specPath)
+			err := ApplyPostProcessors(ctx, clientPath, serviceName, specPath)
 
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ApplyPostProcessors() error = %v, wantErr %v", err, tt.wantErr)
+				return
 			}
 
-			// Verify output file was created
+			// If successful, verify internal client file was created
 			if err == nil {
-				outputPath := filepath.Join(clientPath, "oas_internal_client_gen.go")
-				if _, err := os.Stat(outputPath); os.IsNotExist(err) {
-					t.Errorf("Expected output file not created: %s", outputPath)
-				}
-
-				// Verify file content
-				content, err := os.ReadFile(outputPath)
-				if err != nil {
-					t.Errorf("Failed to read output file: %v", err)
-				} else {
-					contentStr := string(content)
-					// Should contain package declaration
-					if !contains(contentStr, "package") {
-						t.Error("Output file should contain package declaration")
-					}
+				internalClientPath := filepath.Join(clientPath, "oas_internal_client_gen.go")
+				if _, err := os.Stat(internalClientPath); os.IsNotExist(err) {
+					t.Errorf("Expected internal client file not created: %s", internalClientPath)
 				}
 			}
 		})
 	}
 }
 
-func TestApplyPostProcessorsNonexistentSpec(t *testing.T) {
+func TestSetPostProcessorChain(t *testing.T) {
+	// Save original chain
+	originalChain := GetPostProcessorChain()
+	defer SetPostProcessorChain(originalChain)
+
+	// Create a new chain
+	newChain := postprocessor.NewChain()
+	newChain.Add(postprocessor.NewInternalClientProcessor())
+
+	SetPostProcessorChain(newChain)
+
+	retrievedChain := GetPostProcessorChain()
+	if retrievedChain != newChain {
+		t.Error("SetPostProcessorChain() did not update the chain")
+	}
+
+	// Test setting nil (should not update)
+	SetPostProcessorChain(nil)
+	if GetPostProcessorChain() != newChain {
+		t.Error("SetPostProcessorChain(nil) should not update the chain")
+	}
+}
+
+func TestGetPostProcessorChain(t *testing.T) {
+	chain := GetPostProcessorChain()
+
+	if chain == nil {
+		t.Fatal("GetPostProcessorChain() returned nil")
+	}
+
+	// Verify default chain has expected processors
+	list := chain.List()
+	if len(list) < 2 {
+		t.Errorf("Default chain has %d processors, expected at least 2", len(list))
+	}
+
+	// Verify it includes InternalClientGenerator and GoFormatter
+	foundInternal := false
+	foundFormatter := false
+
+	for _, name := range list {
+		if name == "InternalClientGenerator" {
+			foundInternal = true
+		}
+		if name == "GoFormatter" {
+			foundFormatter = true
+		}
+	}
+
+	if !foundInternal {
+		t.Error("Default chain should include InternalClientGenerator")
+	}
+
+	if !foundFormatter {
+		t.Error("Default chain should include GoFormatter")
+	}
+}
+
+func TestApplyPostProcessorsWithCustomChain(t *testing.T) {
+	// Save original chain
+	originalChain := GetPostProcessorChain()
+	defer SetPostProcessorChain(originalChain)
+
+	// Create a custom chain with only the internal client processor
+	customChain := postprocessor.NewChain()
+	customChain.Add(postprocessor.NewInternalClientProcessor())
+	SetPostProcessorChain(customChain)
+
 	tmpDir := t.TempDir()
 	clientPath := filepath.Join(tmpDir, "client")
 	os.MkdirAll(clientPath, 0755)
 
-	// This should still work because it falls back to file-based detection
-	err := ApplyPostProcessors(clientPath, "testservice", "/nonexistent/spec.json")
+	specPath := filepath.Join(tmpDir, "spec.json")
+	spec := `{
+		"openapi": "3.0.0",
+		"info": {"title": "Test", "version": "1.0"},
+		"paths": {}
+	}`
+	os.WriteFile(specPath, []byte(spec), 0644)
 
-	// The function should handle the error gracefully and fall back
-	// It will still try to generate the file
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	err := ApplyPostProcessors(ctx, clientPath, "testservice", specPath)
 	if err != nil {
-		// Error is acceptable if template doesn't exist
-		t.Logf("ApplyPostProcessors() error (acceptable): %v", err)
+		t.Errorf("ApplyPostProcessors() with custom chain error = %v", err)
+	}
+
+	// Verify internal client file was created
+	internalClientPath := filepath.Join(clientPath, "oas_internal_client_gen.go")
+	if _, err := os.Stat(internalClientPath); os.IsNotExist(err) {
+		t.Error("Expected internal client file was not created")
 	}
 }

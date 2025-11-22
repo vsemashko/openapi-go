@@ -196,7 +196,7 @@ func generateClientForSpec(ctx context.Context, specPath, serviceName, folderNam
 
 	// Apply post-processors to the generated client
 	log.Printf("Applying post-processors for %s...", folderName)
-	if err := ApplyPostProcessors(clientPath, folderName, specPath); err != nil {
+	if err := ApplyPostProcessors(ctx, clientPath, folderName, specPath); err != nil {
 		return fmt.Errorf("failed to apply post-processors for %s: %w", folderName, err)
 	}
 
