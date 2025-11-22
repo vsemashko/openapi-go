@@ -27,6 +27,10 @@ type Config struct {
 	// ContinueOnError allows generation to continue even if some specs fail
 	// Default: false (fail fast on first error)
 	ContinueOnError bool `mapstructure:"continue_on_error"`
+
+	// WorkerCount is the number of parallel workers for spec processing
+	// Default: 4
+	WorkerCount int `mapstructure:"worker_count"`
 }
 
 // LoadConfig initializes Viper and loads configuration from application.yml
@@ -61,6 +65,11 @@ func LoadConfig() (Config, error) {
 	var cfg Config
 	if err := v.Unmarshal(&cfg); err != nil {
 		return Config{}, fmt.Errorf("unable to decode config into struct: %w", err)
+	}
+
+	// Set defaults for optional fields
+	if cfg.WorkerCount <= 0 {
+		cfg.WorkerCount = 4
 	}
 
 	// Convert relative paths to absolute paths
@@ -113,5 +122,6 @@ func LogConfiguration(cfg Config) {
 	log.Printf("  Output directory: %s", cfg.OutputDir)
 	log.Printf("  Target services: %s", cfg.TargetServices)
 	log.Printf("  Continue on error: %v", cfg.ContinueOnError)
+	log.Printf("  Worker count: %d", cfg.WorkerCount)
 	log.Printf("  Ogen config: %s", paths.GetOgenConfigPath())
 }

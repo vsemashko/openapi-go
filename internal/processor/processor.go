@@ -6,10 +6,12 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"gitlab.stashaway.com/vladimir.semashko/openapi-go/internal/config"
 	"gitlab.stashaway.com/vladimir.semashko/openapi-go/internal/generator"
 	"gitlab.stashaway.com/vladimir.semashko/openapi-go/internal/paths"
+	"gitlab.stashaway.com/vladimir.semashko/openapi-go/internal/worker"
 )
 
 var (
@@ -54,8 +56,8 @@ func ProcessOpenAPISpecs(ctx context.Context, cfg config.Config) error {
 		return err
 	}
 
-	// Generate clients
-	result, err := generateClients(ctx, specs, cfg.OutputDir, cfg.ContinueOnError)
+	// Generate clients in parallel
+	result, err := generateClients(ctx, specs, cfg.OutputDir, cfg.ContinueOnError, cfg.WorkerCount)
 	if err != nil {
 		return err
 	}
@@ -110,8 +112,96 @@ func findOpenAPISpecs(specsDir string, targetServices string) ([]string, error) 
 	return specs, nil
 }
 
-// generateClients generates clients for all found OpenAPI specs.
-func generateClients(ctx context.Context, specs []string, outputDir string, continueOnError bool) (*ProcessingResult, error) {
+// generateClients generates clients for all found OpenAPI specs using parallel processing.
+func generateClients(ctx context.Context, specs []string, outputDir string, continueOnError bool, workerCount int) (*ProcessingResult, error) {
+	result := &ProcessingResult{
+		TotalSpecs:   len(specs),
+		SuccessCount: 0,
+		FailedSpecs:  []SpecFailure{},
+	}
+
+	// If only one spec or worker count is 1, process sequentially
+	if len(specs) == 1 || workerCount == 1 {
+		return generateClientsSequential(ctx, specs, outputDir, continueOnError)
+	}
+
+	log.Printf("Processing %d specs with %d parallel workers", len(specs), workerCount)
+
+	// Create worker pool
+	pool := worker.NewPool(worker.Config{
+		WorkerCount:   workerCount,
+		TaskQueueSize: len(specs),
+	})
+
+	// Create tasks for each spec
+	tasks := make([]worker.Task, 0, len(specs))
+	for _, specPath := range specs {
+		// Capture variables for closure
+		currentSpecPath := specPath
+		serviceDir := filepath.Base(filepath.Dir(currentSpecPath))
+		serviceName := normalizeServiceName(serviceDir)
+		folderName := serviceName + "sdk"
+
+		task := worker.Task{
+			ID: serviceName,
+			Execute: func(taskCtx context.Context) error {
+				log.Printf("Processing service: %s (spec: %s)", serviceName, currentSpecPath)
+				return generateClientForSpec(taskCtx, currentSpecPath, serviceName, folderName, outputDir)
+			},
+		}
+		tasks = append(tasks, task)
+	}
+
+	// Process all tasks in parallel
+	results, err := pool.ProcessBatch(ctx, tasks)
+	if err != nil {
+		return result, fmt.Errorf("parallel processing failed: %w", err)
+	}
+
+	// Collect results with thread-safe access
+	var mu sync.Mutex
+	for _, taskResult := range results {
+		if taskResult.Error != nil {
+			// Find the corresponding spec path
+			var specPath string
+			for _, spec := range specs {
+				serviceDir := filepath.Base(filepath.Dir(spec))
+				serviceName := normalizeServiceName(serviceDir)
+				if serviceName == taskResult.TaskID {
+					specPath = spec
+					break
+				}
+			}
+
+			failure := SpecFailure{
+				SpecPath:    specPath,
+				ServiceName: taskResult.TaskID,
+				Error:       taskResult.Error,
+			}
+
+			mu.Lock()
+			result.FailedSpecs = append(result.FailedSpecs, failure)
+			mu.Unlock()
+
+			log.Printf("❌ Failed to generate client for %ssdk: %v", taskResult.TaskID, taskResult.Error)
+
+			// Fail fast unless continue-on-error is enabled
+			if !continueOnError {
+				return result, fmt.Errorf("generation failed for %s: %w", taskResult.TaskID, taskResult.Error)
+			}
+		} else {
+			mu.Lock()
+			result.SuccessCount++
+			mu.Unlock()
+			log.Printf("✅ Successfully generated client for %ssdk", taskResult.TaskID)
+		}
+	}
+
+	return result, nil
+}
+
+// generateClientsSequential generates clients sequentially (fallback for single spec or single worker).
+func generateClientsSequential(ctx context.Context, specs []string, outputDir string, continueOnError bool) (*ProcessingResult, error) {
 	result := &ProcessingResult{
 		TotalSpecs:   len(specs),
 		SuccessCount: 0,
