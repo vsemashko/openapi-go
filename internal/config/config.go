@@ -39,6 +39,18 @@ type Config struct {
 	// CacheDir is the directory where cache metadata is stored
 	// Default: .openapi-cache
 	CacheDir string `mapstructure:"cache_dir"`
+
+	// SpecFilePatterns are the filenames to look for when discovering OpenAPI specs
+	// Default: ["openapi.json", "openapi.yaml", "openapi.yml"]
+	SpecFilePatterns []string `mapstructure:"spec_file_patterns"`
+
+	// LogLevel sets the logging level (debug, info, warn, error)
+	// Default: info
+	LogLevel string `mapstructure:"log_level"`
+
+	// LogFormat sets the log output format (json, text)
+	// Default: json
+	LogFormat string `mapstructure:"log_format"`
 }
 
 // LoadConfig initializes Viper and loads configuration from application.yml
@@ -90,6 +102,19 @@ func LoadConfig() (Config, error) {
 		cfg.CacheDir = ".openapi-cache"
 	}
 
+	// Set default spec file patterns if not specified
+	if len(cfg.SpecFilePatterns) == 0 {
+		cfg.SpecFilePatterns = []string{"openapi.json", "openapi.yaml", "openapi.yml"}
+	}
+
+	// Set default log level and format
+	if cfg.LogLevel == "" {
+		cfg.LogLevel = "info"
+	}
+	if cfg.LogFormat == "" {
+		cfg.LogFormat = "json"
+	}
+
 	// Convert relative paths to absolute paths
 	cfg.SpecsDir = paths.MakeAbsolutePath(cfg.SpecsDir)
 	cfg.OutputDir = paths.MakeAbsolutePath(cfg.OutputDir)
@@ -133,16 +158,4 @@ func (cfg *Config) Validate() error {
 	return nil
 }
 
-// LogConfiguration logs the current configuration parameters
-func LogConfiguration(cfg Config) {
-	log.Printf("Configuration loaded:")
-	log.Printf("  Repository root: %s", paths.GetRepositoryRoot())
-	log.Printf("  Specs directory: %s", cfg.SpecsDir)
-	log.Printf("  Output directory: %s", cfg.OutputDir)
-	log.Printf("  Target services: %s", cfg.TargetServices)
-	log.Printf("  Continue on error: %v", cfg.ContinueOnError)
-	log.Printf("  Worker count: %d", cfg.WorkerCount)
-	log.Printf("  Enable cache: %v", cfg.EnableCache)
-	log.Printf("  Cache directory: %s", cfg.CacheDir)
-	log.Printf("  Ogen config: %s", paths.GetOgenConfigPath())
-}
+// LogConfiguration is now in config_logging.go to support structured logging

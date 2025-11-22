@@ -13,3 +13,21 @@ target_services: "(funding-server-sdk|holidays-server-sdk)"
 # Set to true for development, keep false for CI/CD to catch failures
 # Can be overridden with environment variable: CONTINUE_ON_ERROR=true
 continue_on_error: false 
+# Number of parallel workers for processing specs (default: 4)
+worker_count: 4
+
+# Enable caching to skip regeneration of unchanged specs (default: true)
+enable_cache: true
+
+# Spec file patterns to search for (supports both JSON and YAML formats)
+# Default: ["openapi.json", "openapi.yaml", "openapi.yml"]
+spec_file_patterns:
+  - "openapi.json"
+  - "openapi.yaml"
+  - "openapi.yml"
+
+# Logging configuration
+# log_level: debug, info, warn, error (default: info)
+# log_format: json, text (default: json)
+log_level: "info"
+log_format: "json"
