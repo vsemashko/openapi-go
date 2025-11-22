@@ -17,3 +17,6 @@ cover.xml
 # Tools directory
 /tools/
 .task
+
+# Compiled binary
+/openapi-go
