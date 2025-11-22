@@ -51,6 +51,30 @@ type Config struct {
 	// LogFormat sets the log output format (json, text)
 	// Default: json
 	LogFormat string `mapstructure:"log_format"`
+
+	// Validator configuration
+	Validator ValidatorConfig `mapstructure:"validator"`
+}
+
+// ValidatorConfig holds validator-specific configuration
+type ValidatorConfig struct {
+	// Enabled controls whether spec validation is performed
+	// Default: true
+	Enabled bool `mapstructure:"enabled"`
+
+	// FailOnWarnings treats warnings as errors
+	// Default: false
+	FailOnWarnings bool `mapstructure:"fail_on_warnings"`
+
+	// StrictMode enables additional validation checks
+	// Default: false
+	StrictMode bool `mapstructure:"strict_mode"`
+
+	// CustomRules is a list of custom validation rules to apply
+	CustomRules []string `mapstructure:"custom_rules"`
+
+	// IgnoredRules is a list of validation rule codes to ignore
+	IgnoredRules []string `mapstructure:"ignored_rules"`
 }
 
 // LoadConfig initializes Viper and loads configuration from application.yml
@@ -114,6 +138,10 @@ func LoadConfig() (Config, error) {
 	if cfg.LogFormat == "" {
 		cfg.LogFormat = "json"
 	}
+
+	// Set validator defaults
+	v.SetDefault("validator.enabled", true)
+	cfg.Validator.Enabled = v.GetBool("validator.enabled")
 
 	// Convert relative paths to absolute paths
 	cfg.SpecsDir = paths.MakeAbsolutePath(cfg.SpecsDir)

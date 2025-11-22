@@ -14,6 +14,7 @@ import (
 	"gitlab.stashaway.com/vladimir.semashko/openapi-go/internal/generator"
 	"gitlab.stashaway.com/vladimir.semashko/openapi-go/internal/metrics"
 	"gitlab.stashaway.com/vladimir.semashko/openapi-go/internal/paths"
+	"gitlab.stashaway.com/vladimir.semashko/openapi-go/internal/validator"
 	"gitlab.stashaway.com/vladimir.semashko/openapi-go/internal/worker"
 )
 
@@ -86,6 +87,15 @@ func ProcessOpenAPISpecs(ctx context.Context, cfg config.Config, optionalLogger 
 	specs, err := findOpenAPISpecs(cfg.SpecsDir, cfg.TargetServices, cfg.SpecFilePatterns)
 	if err != nil {
 		return err
+	}
+
+	// Validate specs if validation is enabled
+	if cfg.Validator.Enabled {
+		log.Printf("Validating %d OpenAPI specs...", len(specs))
+		if err := validateSpecs(specs, cfg.Validator, cfg.ContinueOnError); err != nil {
+			return fmt.Errorf("spec validation failed: %w", err)
+		}
+		log.Printf("All specs validated successfully")
 	}
 
 	// Initialize cache if enabled
@@ -506,4 +516,47 @@ func SetGenerator(gen generator.Generator) {
 	if gen != nil {
 		defaultGenerator = gen
 	}
+}
+
+// validateSpecs validates all OpenAPI specs before generation
+func validateSpecs(specs []string, validatorCfg config.ValidatorConfig, continueOnError bool) error {
+	// Create validator
+	v := validator.NewValidator(validator.Config{
+		Enabled:        validatorCfg.Enabled,
+		FailOnWarnings: validatorCfg.FailOnWarnings,
+		StrictMode:     validatorCfg.StrictMode,
+		CustomRules:    validatorCfg.CustomRules,
+		IgnoredRules:   validatorCfg.IgnoredRules,
+	})
+
+	// Validate all specs
+	results, err := validator.ValidateMultiple(v, specs)
+	if err != nil {
+		return fmt.Errorf("validation error: %w", err)
+	}
+
+	// Check for validation failures
+	hasErrors := false
+	for _, result := range results {
+		if !result.Valid {
+			hasErrors = true
+			// Log detailed validation results for failed specs
+			log.Printf("\n%s", validator.FormatValidationResult(result))
+		} else if len(result.Warnings) > 0 {
+			// Log warnings even for valid specs
+			log.Printf("\nValidation warnings for %s:", result.SpecInfo.Path)
+			for _, warning := range result.Warnings {
+				log.Printf("  [%s] %s: %s", warning.Code, warning.Field, warning.Message)
+			}
+		}
+	}
+
+	if hasErrors {
+		if !continueOnError {
+			return fmt.Errorf("validation failed for one or more specs (see logs above)")
+		}
+		log.Printf("Warning: Some specs failed validation but continuing due to continue_on_error=true")
+	}
+
+	return nil
 }

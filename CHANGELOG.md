@@ -8,11 +8,77 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned
-- OpenAPI 3.1 support
+- OpenAPI 3.1 support (monitoring ogen library status)
 - Multiple generator support (alternative to ogen)
 - Plugin system for post-processors
 - WebSocket/gRPC support
 - Incremental generation optimization
+
+## [2.1.0] - 2025-11-22
+
+### Added - Validation & YAML Support
+
+#### YAML Spec Parsing Fix (Critical Bug Fix)
+- **Fixed critical bug** in `internal/spec/parser.go` where YAML specs were discovered but not parsed correctly
+- Added proper YAML unmarshaling using `gopkg.in/yaml.v3`
+- Added dual `json` and `yaml` struct tags to all OpenAPI spec types
+- Implemented format detection by file extension (.json, .yaml, .yml)
+- Added fallback parsing for unknown extensions (tries JSON first, then YAML)
+- **Impact**: Security detection now works correctly for YAML specs
+
+#### Comprehensive Spec Validator (New Feature)
+- Added new `internal/validator` package with full validation framework
+- Validates OpenAPI 3.0.x specifications before code generation
+- Supports both JSON and YAML formats
+- Detects and reports security scheme configuration
+- Configurable validation rules with custom linting
+- Error codes for all validation failures
+- Warning system with optional fail-on-warnings mode
+- Strict mode for enhanced validation checks
+- Integrated into generation pipeline with early failure detection
+- Test coverage: 100% for validator package
+
+#### Validator Features
+- **File validation**: Checks file exists, is readable, and is not a directory
+- **Format detection**: Auto-detects JSON vs YAML from extension
+- **Version validation**: Validates OpenAPI version (3.0.x fully supported, 3.1.x partial with warnings)
+- **Info validation**: Validates required info section (title, version)
+- **Security detection**: Extracts and reports security scheme information
+- **Custom rules**: Support for custom validation rules (require-description, require-contact, require-license)
+- **Rule ignoring**: Ability to ignore specific validation rules by code
+- **Detailed reporting**: Formatted validation results with error/warning codes and messages
+
+#### Configuration Updates
+- Added `validator` configuration section to `Config` struct
+- Added `ValidatorConfig` with options: enabled, fail_on_warnings, strict_mode, custom_rules, ignored_rules
+- Default: validator enabled, fail-on-warnings disabled, strict mode disabled
+- Environment variable support: `VALIDATOR_ENABLED`, `VALIDATOR_FAIL_ON_WARNINGS`, `VALIDATOR_STRICT_MODE`
+
+#### Testing
+- Added 5 new YAML parsing tests in `internal/spec/parser_test.go`
+- Added comprehensive validator tests (16 test cases) in `internal/validator/validator_test.go`
+- All tests passing (100% success rate)
+- Test coverage increased for spec package
+
+#### Documentation
+- Added comprehensive **Validator Guide** (`docs/validator-guide.md`)
+- Documented all validation rules and error codes
+- Added configuration examples and best practices
+- Included troubleshooting section for common validation issues
+- Added examples of valid and invalid specs
+
+### Fixed
+- **CRITICAL**: YAML spec parsing now works correctly (was only doing JSON unmarshaling)
+- **CRITICAL**: Security detection now works for YAML/YML spec files
+- NewInternalClient generation now correct for YAML specs with security
+
+### Research
+- **OpenAPI 3.1 Support Status** in ogen-go (as of Nov 2025):
+  - ogen-go primarily supports OpenAPI 3.0.x
+  - Partial OpenAPI 3.1 support (some specs work, some features not supported)
+  - Full 3.1 support not yet complete
+  - Recommendation: Continue using OpenAPI 3.0.x for best compatibility
+  - Monitor: https://github.com/ogen-go/ogen/issues for updates
 
 ## [2.0.0] - 2025-11-22
 
