@@ -1,24 +1,50 @@
 package processor
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
-	"os/exec"
 	"path/filepath"
+	"sync"
 
+	"gitlab.stashaway.com/vladimir.semashko/openapi-go/internal/cache"
 	"gitlab.stashaway.com/vladimir.semashko/openapi-go/internal/config"
+	"gitlab.stashaway.com/vladimir.semashko/openapi-go/internal/generator"
+	"gitlab.stashaway.com/vladimir.semashko/openapi-go/internal/paths"
+	"gitlab.stashaway.com/vladimir.semashko/openapi-go/internal/worker"
 )
+
+var (
+	// defaultGenerator is the generator used for code generation
+	// Can be overridden for testing or to support different generators
+	defaultGenerator generator.Generator = generator.NewOgenGenerator()
+)
+
+// ProcessingResult contains the results of processing OpenAPI specs
+type ProcessingResult struct {
+	TotalSpecs   int
+	SuccessCount int
+	FailedSpecs  []SpecFailure
+}
+
+// SpecFailure represents a failed spec generation
+type SpecFailure struct {
+	SpecPath    string
+	ServiceName string
+	Error       error
+}
 
 // ProcessOpenAPISpecs processes OpenAPI specifications and generates client code.
 // It searches for OpenAPI specs in the specified directory that match the targetServices pattern,
-// then generates Go client code for each spec using the ogen tool.
+// then generates Go client code for each spec using the configured generator.
 //
 // Parameters:
-// - config: Configuration containing specs directory, output directory, and target services pattern
+// - ctx: Context for cancellation and timeouts
+// - cfg: Configuration containing specs directory, output directory, and target services pattern
 //
 // Returns an error if the process fails at any stage.
-func ProcessOpenAPISpecs(cfg config.Config) error {
+func ProcessOpenAPISpecs(ctx context.Context, cfg config.Config) error {
 	// Setup the client output directory
 	clientOutputDir := filepath.Join(cfg.OutputDir, "clients")
 	if err := os.MkdirAll(clientOutputDir, os.ModePerm); err != nil {
@@ -31,13 +57,39 @@ func ProcessOpenAPISpecs(cfg config.Config) error {
 		return err
 	}
 
-	// Generate clients
-	successCount, err := generateClients(specs, cfg.OutputDir)
+	// Initialize cache if enabled
+	var specCache *cache.Cache
+	if cfg.EnableCache {
+		specCache, err = cache.NewCache(cache.Config{CacheDir: cfg.CacheDir})
+		if err != nil {
+			log.Printf("Warning: Failed to initialize cache, proceeding without caching: %v", err)
+			specCache = nil
+		} else {
+			// Prune invalid cache entries
+			pruned, err := specCache.PruneInvalid()
+			if err != nil {
+				log.Printf("Warning: Failed to prune cache: %v", err)
+			} else if pruned > 0 {
+				log.Printf("Pruned %d invalid cache entries", pruned)
+			}
+		}
+	}
+
+	// Generate clients in parallel
+	result, err := generateClients(ctx, specs, cfg.OutputDir, cfg.ContinueOnError, cfg.WorkerCount, specCache)
 	if err != nil {
 		return err
 	}
 
-	log.Printf("Successfully processed %d/%d OpenAPI specs", successCount, len(specs))
+	// Log results
+	logProcessingResult(result)
+
+	// Return error if any specs failed (unless continue-on-error is enabled)
+	if !cfg.ContinueOnError && result.SuccessCount < result.TotalSpecs {
+		return fmt.Errorf("failed to generate %d/%d clients",
+			len(result.FailedSpecs), result.TotalSpecs)
+	}
+
 	return nil
 }
 
@@ -79,29 +131,206 @@ func findOpenAPISpecs(specsDir string, targetServices string) ([]string, error) 
 	return specs, nil
 }
 
-// generateClients generates clients for all found OpenAPI specs.
-func generateClients(specs []string, outputDir string) (int, error) {
-	successCount := 0
+// generateClients generates clients for all found OpenAPI specs using parallel processing.
+func generateClients(ctx context.Context, specs []string, outputDir string, continueOnError bool, workerCount int, specCache *cache.Cache) (*ProcessingResult, error) {
+	result := &ProcessingResult{
+		TotalSpecs:   len(specs),
+		SuccessCount: 0,
+		FailedSpecs:  []SpecFailure{},
+	}
 
+	// If only one spec or worker count is 1, process sequentially
+	if len(specs) == 1 || workerCount == 1 {
+		return generateClientsSequential(ctx, specs, outputDir, continueOnError, specCache)
+	}
+
+	log.Printf("Processing %d specs with %d parallel workers", len(specs), workerCount)
+
+	// Create worker pool
+	pool := worker.NewPool(worker.Config{
+		WorkerCount:   workerCount,
+		TaskQueueSize: len(specs),
+	})
+
+	// Create tasks for each spec
+	tasks := make([]worker.Task, 0, len(specs))
 	for _, specPath := range specs {
-		serviceDir := filepath.Base(filepath.Dir(specPath))
+		// Capture variables for closure
+		currentSpecPath := specPath
+		serviceDir := filepath.Base(filepath.Dir(currentSpecPath))
 		serviceName := normalizeServiceName(serviceDir)
 		folderName := serviceName + "sdk"
 
-		log.Printf("Processing service: %s (spec: %s)", serviceName, specPath)
+		task := worker.Task{
+			ID: serviceName,
+			Execute: func(taskCtx context.Context) error {
+				// Check cache if available
+				if specCache != nil {
+					valid, err := specCache.IsValid(currentSpecPath, defaultGenerator.Version())
+					if err != nil {
+						log.Printf("Warning: Cache check failed for %s: %v", serviceName, err)
+					} else if valid {
+						log.Printf("⚡ Using cached client for %s (spec unchanged)", folderName)
+						return nil
+					}
+				}
 
-		if err := generateClientForSpec(specPath, serviceName, folderName, outputDir); err != nil {
-			log.Printf("Warning: Failed to generate client for %s: %v", folderName, err)
+				log.Printf("Processing service: %s (spec: %s)", serviceName, currentSpecPath)
+				clientPath := filepath.Join(outputDir, "clients", folderName)
+
+				// Generate client
+				if err := generateClientForSpec(taskCtx, currentSpecPath, serviceName, folderName, outputDir); err != nil {
+					return err
+				}
+
+				// Update cache on success
+				if specCache != nil {
+					if err := specCache.Set(currentSpecPath, clientPath, serviceName, defaultGenerator.Version()); err != nil {
+						log.Printf("Warning: Failed to update cache for %s: %v", serviceName, err)
+					}
+				}
+
+				return nil
+			},
+		}
+		tasks = append(tasks, task)
+	}
+
+	// Process all tasks in parallel
+	results, err := pool.ProcessBatch(ctx, tasks)
+	if err != nil {
+		return result, fmt.Errorf("parallel processing failed: %w", err)
+	}
+
+	// Collect results with thread-safe access
+	var mu sync.Mutex
+	for _, taskResult := range results {
+		if taskResult.Error != nil {
+			// Find the corresponding spec path
+			var specPath string
+			for _, spec := range specs {
+				serviceDir := filepath.Base(filepath.Dir(spec))
+				serviceName := normalizeServiceName(serviceDir)
+				if serviceName == taskResult.TaskID {
+					specPath = spec
+					break
+				}
+			}
+
+			failure := SpecFailure{
+				SpecPath:    specPath,
+				ServiceName: taskResult.TaskID,
+				Error:       taskResult.Error,
+			}
+
+			mu.Lock()
+			result.FailedSpecs = append(result.FailedSpecs, failure)
+			mu.Unlock()
+
+			log.Printf("❌ Failed to generate client for %ssdk: %v", taskResult.TaskID, taskResult.Error)
+
+			// Fail fast unless continue-on-error is enabled
+			if !continueOnError {
+				return result, fmt.Errorf("generation failed for %s: %w", taskResult.TaskID, taskResult.Error)
+			}
 		} else {
-			successCount++
+			mu.Lock()
+			result.SuccessCount++
+			mu.Unlock()
+			log.Printf("✅ Successfully generated client for %ssdk", taskResult.TaskID)
 		}
 	}
 
-	return successCount, nil
+	return result, nil
+}
+
+// generateClientsSequential generates clients sequentially (fallback for single spec or single worker).
+func generateClientsSequential(ctx context.Context, specs []string, outputDir string, continueOnError bool, specCache *cache.Cache) (*ProcessingResult, error) {
+	result := &ProcessingResult{
+		TotalSpecs:   len(specs),
+		SuccessCount: 0,
+		FailedSpecs:  []SpecFailure{},
+	}
+
+	for _, specPath := range specs {
+		// Check for context cancellation
+		select {
+		case <-ctx.Done():
+			return result, fmt.Errorf("generation cancelled: %w", ctx.Err())
+		default:
+		}
+
+		serviceDir := filepath.Base(filepath.Dir(specPath))
+		serviceName := normalizeServiceName(serviceDir)
+		folderName := serviceName + "sdk"
+		clientPath := filepath.Join(outputDir, "clients", folderName)
+
+		// Check cache if available
+		if specCache != nil {
+			valid, err := specCache.IsValid(specPath, defaultGenerator.Version())
+			if err != nil {
+				log.Printf("Warning: Cache check failed for %s: %v", serviceName, err)
+			} else if valid {
+				log.Printf("⚡ Using cached client for %s (spec unchanged)", folderName)
+				result.SuccessCount++
+				continue
+			}
+		}
+
+		log.Printf("Processing service: %s (spec: %s)", serviceName, specPath)
+
+		err := generateClientForSpec(ctx, specPath, serviceName, folderName, outputDir)
+		if err != nil {
+			failure := SpecFailure{
+				SpecPath:    specPath,
+				ServiceName: serviceName,
+				Error:       err,
+			}
+			result.FailedSpecs = append(result.FailedSpecs, failure)
+
+			log.Printf("❌ Failed to generate client for %s: %v", folderName, err)
+
+			// Fail fast unless continue-on-error is enabled
+			if !continueOnError {
+				return result, fmt.Errorf("generation failed for %s: %w", serviceName, err)
+			}
+		} else {
+			result.SuccessCount++
+			log.Printf("✅ Successfully generated client for %s", folderName)
+
+			// Update cache on success
+			if specCache != nil {
+				if err := specCache.Set(specPath, clientPath, serviceName, defaultGenerator.Version()); err != nil {
+					log.Printf("Warning: Failed to update cache for %s: %v", serviceName, err)
+				}
+			}
+		}
+	}
+
+	return result, nil
+}
+
+// logProcessingResult logs a summary of the processing results
+func logProcessingResult(result *ProcessingResult) {
+	log.Printf("=====================================")
+	log.Printf("SDK Generation Summary")
+	log.Printf("=====================================")
+	log.Printf("Total specs:    %d", result.TotalSpecs)
+	log.Printf("Successful:     %d", result.SuccessCount)
+	log.Printf("Failed:         %d", len(result.FailedSpecs))
+
+	if len(result.FailedSpecs) > 0 {
+		log.Printf("-------------------------------------")
+		log.Printf("Failed specs:")
+		for _, failure := range result.FailedSpecs {
+			log.Printf("  - %s: %v", failure.ServiceName, failure.Error)
+		}
+	}
+	log.Printf("=====================================")
 }
 
 // generateClientForSpec generates a client for a single OpenAPI spec.
-func generateClientForSpec(specPath, serviceName, folderName, outputDir string) error {
+func generateClientForSpec(ctx context.Context, specPath, serviceName, folderName, outputDir string) error {
 	// Create the client directory
 	clientPath := filepath.Join(outputDir, "clients", folderName)
 	if err := os.MkdirAll(clientPath, os.ModePerm); err != nil {
@@ -115,13 +344,13 @@ func generateClientForSpec(specPath, serviceName, folderName, outputDir string) 
 	}
 
 	// Run the client generator
-	if err := runOgenGenerator(folderName, specPath, clientPath); err != nil {
+	if err := runGenerator(ctx, folderName, specPath, clientPath); err != nil {
 		return err
 	}
 
 	// Apply post-processors to the generated client
 	log.Printf("Applying post-processors for %s...", folderName)
-	if err := ApplyPostProcessors(clientPath, folderName); err != nil {
+	if err := ApplyPostProcessors(ctx, clientPath, folderName, specPath); err != nil {
 		return fmt.Errorf("failed to apply post-processors for %s: %w", folderName, err)
 	}
 
@@ -129,36 +358,30 @@ func generateClientForSpec(specPath, serviceName, folderName, outputDir string) 
 	return nil
 }
 
-// runOgenGenerator executes the ogen tool to generate a client from an OpenAPI spec.
-func runOgenGenerator(serviceName, specPath, outputDir string) error {
-	log.Printf("Generating client for %s...", serviceName)
+// runGenerator executes the configured generator to create client code from an OpenAPI spec.
+func runGenerator(ctx context.Context, serviceName, specPath, outputDir string) error {
+	log.Printf("Generating client for %s using %s...", serviceName, defaultGenerator.Name())
 
-	// Step 1: Ensure ogen CLI is installed
-	if err := installOgenCLI(); err != nil {
-		return fmt.Errorf("failed to install ogen CLI: %w", err)
+	// Create generate spec
+	spec := generator.GenerateSpec{
+		SpecPath:    specPath,
+		OutputDir:   outputDir,
+		PackageName: serviceName,
+		ConfigPath:  paths.GetOgenConfigPath(),
+		Clean:       true,
 	}
 
-	// Step 2: Run ogen to generate the client
-	cmd := exec.Command("ogen",
-		"--target", outputDir,
-		"--package", serviceName,
-		"--clean",
-		"--config", "ogen.yml",
-		specPath)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("failed to run ogen for %s: %w", serviceName, err)
+	// Generate client code
+	if err := defaultGenerator.Generate(ctx, spec); err != nil {
+		return fmt.Errorf("generation failed for %s: %w", serviceName, err)
 	}
 
 	return nil
 }
 
-// installOgenCLI ensures the ogen CLI tool is installed.
-func installOgenCLI() error {
-	cmd := exec.Command("go", "install", "github.com/ogen-go/ogen/cmd/ogen@latest")
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
+// SetGenerator allows overriding the default generator (useful for testing)
+func SetGenerator(gen generator.Generator) {
+	if gen != nil {
+		defaultGenerator = gen
+	}
 }

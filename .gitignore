@@ -8,7 +8,10 @@ csv
 output_downloads
 build/datastax/*
 cover.out
+coverage.out
+*coverage*.out
 cover.xml
+coverage.html
 .DS_Store
 .vscode**
 !.envrc.example
@@ -17,3 +20,9 @@ cover.xml
 # Tools directory
 /tools/
 .task
+
+# Compiled binary
+/openapi-go
+
+# Cache directory
+.openapi-cache/

@@ -9,4 +9,7 @@ output_dir: "./generated"
 # Regex pattern to filter services
 target_services: "(funding-server-sdk|holidays-server-sdk)"
 
-# You can add more configuration options here as needed 
+# Continue processing even if some specs fail (default: false)
+# Set to true for development, keep false for CI/CD to catch failures
+# Can be overridden with environment variable: CONTINUE_ON_ERROR=true
+continue_on_error: false 

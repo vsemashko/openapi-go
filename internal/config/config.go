@@ -3,9 +3,13 @@ package config
 import (
 	"fmt"
 	"log"
+	"os"
+	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/spf13/viper"
+	"gitlab.stashaway.com/vladimir.semashko/openapi-go/internal/paths"
 )
 
 // Config holds all configuration parameters for the application
@@ -19,6 +23,22 @@ type Config struct {
 	// TargetServices is a regular expression pattern to filter services
 	// Empty string matches all services
 	TargetServices string `mapstructure:"target_services"`
+
+	// ContinueOnError allows generation to continue even if some specs fail
+	// Default: false (fail fast on first error)
+	ContinueOnError bool `mapstructure:"continue_on_error"`
+
+	// WorkerCount is the number of parallel workers for spec processing
+	// Default: 4
+	WorkerCount int `mapstructure:"worker_count"`
+
+	// EnableCache enables caching of generated clients to skip regeneration
+	// Default: true
+	EnableCache bool `mapstructure:"enable_cache"`
+
+	// CacheDir is the directory where cache metadata is stored
+	// Default: .openapi-cache
+	CacheDir string `mapstructure:"cache_dir"`
 }
 
 // LoadConfig initializes Viper and loads configuration from application.yml
@@ -26,11 +46,17 @@ type Config struct {
 func LoadConfig() (Config, error) {
 	v := viper.New()
 
-	// Set up config file support
+	// Set up config file support with absolute paths
+	resourcesDir := paths.GetResourcesDir()
+
 	v.SetConfigName("application")
 	v.SetConfigType("yml")
-	v.AddConfigPath("./resources")
-	v.AddConfigPath("$HOME/.openapi-go")
+	v.AddConfigPath(resourcesDir)
+
+	// Also check user home directory
+	if home, err := os.UserHomeDir(); err == nil {
+		v.AddConfigPath(filepath.Join(home, ".openapi-go"))
+	}
 
 	// Enable automatic environment variable binding
 	v.AutomaticEnv()
@@ -49,13 +75,74 @@ func LoadConfig() (Config, error) {
 		return Config{}, fmt.Errorf("unable to decode config into struct: %w", err)
 	}
 
+	// Set defaults for optional fields
+	if cfg.WorkerCount <= 0 {
+		cfg.WorkerCount = 4
+	}
+
+	// Set EnableCache default to true (caching enabled by default)
+	// Note: Viper unmarshals false as zero value, so we need explicit handling
+	// If not set in config, enable cache by default
+	v.SetDefault("enable_cache", true)
+	cfg.EnableCache = v.GetBool("enable_cache")
+
+	if cfg.CacheDir == "" {
+		cfg.CacheDir = ".openapi-cache"
+	}
+
+	// Convert relative paths to absolute paths
+	cfg.SpecsDir = paths.MakeAbsolutePath(cfg.SpecsDir)
+	cfg.OutputDir = paths.MakeAbsolutePath(cfg.OutputDir)
+	cfg.CacheDir = paths.MakeAbsolutePath(cfg.CacheDir)
+
+	// Validate configuration
+	if err := cfg.Validate(); err != nil {
+		return Config{}, fmt.Errorf("invalid configuration: %w", err)
+	}
+
 	return cfg, nil
+}
+
+// Validate checks if the configuration is valid
+func (cfg *Config) Validate() error {
+	// Validate SpecsDir exists
+	if cfg.SpecsDir == "" {
+		return fmt.Errorf("specs_dir is required")
+	}
+	if err := paths.EnsurePathExists(cfg.SpecsDir); err != nil {
+		return fmt.Errorf("specs_dir validation failed: %w", err)
+	}
+
+	// Validate OutputDir
+	if cfg.OutputDir == "" {
+		return fmt.Errorf("output_dir is required")
+	}
+
+	// Create output directory if it doesn't exist and check if writable
+	if err := paths.EnsureDirectoryWritable(cfg.OutputDir); err != nil {
+		return fmt.Errorf("output_dir validation failed: %w", err)
+	}
+
+	// Validate TargetServices regex
+	if cfg.TargetServices != "" {
+		if _, err := regexp.Compile(cfg.TargetServices); err != nil {
+			return fmt.Errorf("target_services is not a valid regex: %w", err)
+		}
+	}
+
+	return nil
 }
 
 // LogConfiguration logs the current configuration parameters
 func LogConfiguration(cfg Config) {
-	log.Printf("Processing OpenAPI specs with configuration:")
-	log.Printf("- Specs directory: %s", cfg.SpecsDir)
-	log.Printf("- Output directory: %s", cfg.OutputDir)
-	log.Printf("- Target services: %s", cfg.TargetServices)
+	log.Printf("Configuration loaded:")
+	log.Printf("  Repository root: %s", paths.GetRepositoryRoot())
+	log.Printf("  Specs directory: %s", cfg.SpecsDir)
+	log.Printf("  Output directory: %s", cfg.OutputDir)
+	log.Printf("  Target services: %s", cfg.TargetServices)
+	log.Printf("  Continue on error: %v", cfg.ContinueOnError)
+	log.Printf("  Worker count: %d", cfg.WorkerCount)
+	log.Printf("  Enable cache: %v", cfg.EnableCache)
+	log.Printf("  Cache directory: %s", cfg.CacheDir)
+	log.Printf("  Ogen config: %s", paths.GetOgenConfigPath())
 }

@@ -1,63 +1,49 @@
 package processor
 
 import (
-	"fmt"
-	"os"
-	"path/filepath"
-	"text/template"
+	"context"
+
+	"gitlab.stashaway.com/vladimir.semashko/openapi-go/internal/postprocessor"
 )
 
-// ApplyPostProcessors applies post-processing steps to the generated client code.
-// This includes creating additional client files with convenience functions.
-func ApplyPostProcessors(clientPath, serviceName string) error {
-	// Generate the internal client file
-	if err := generateInternalClientFile(clientPath, serviceName); err != nil {
-		return fmt.Errorf("failed to generate internal client file: %w", err)
-	}
+var (
+	// defaultPostProcessorChain is the default chain of post-processors
+	// Can be overridden for testing or customization
+	defaultPostProcessorChain *postprocessor.Chain
+)
 
-	return nil
+func init() {
+	// Initialize default post-processor chain
+	defaultPostProcessorChain = postprocessor.NewChain()
+
+	// Add internal client generator
+	defaultPostProcessorChain.Add(postprocessor.NewInternalClientProcessor())
+
+	// Add Go formatter (without simplify for compatibility)
+	defaultPostProcessorChain.Add(postprocessor.NewFormatterProcessor(false))
 }
 
-// generateInternalClientFile creates a file with the NewInternalClient function
-// that initializes a client with base security for internal endpoints.
-func generateInternalClientFile(clientPath, serviceName string) error {
-	// Path to the template file
-	templatePath := "resources/templates/internal_client.tmpl"
-
-	// Check if the client has security by looking for the security file
-	securityFilePath := filepath.Join(clientPath, "oas_security_gen.go")
-	hasSecurity := false
-	if _, err := os.Stat(securityFilePath); err == nil {
-		hasSecurity = true
-	}
-
-	// Create the template data
-	data := struct {
-		PackageName string
-		HasSecurity bool
-	}{
+// ApplyPostProcessors applies post-processing steps to the generated client code.
+// This uses the configured post-processor chain.
+func ApplyPostProcessors(ctx context.Context, clientPath, serviceName, specPath string) error {
+	spec := postprocessor.ProcessSpec{
+		ClientPath:  clientPath,
+		ServiceName: serviceName,
+		SpecPath:    specPath,
 		PackageName: serviceName,
-		HasSecurity: hasSecurity,
 	}
 
-	// Parse the template from file
-	tmpl, err := template.ParseFiles(templatePath)
-	if err != nil {
-		return fmt.Errorf("failed to parse template file %s: %w", templatePath, err)
-	}
+	return defaultPostProcessorChain.Process(ctx, spec)
+}
 
-	// Create the output file
-	outputPath := filepath.Join(clientPath, "oas_internal_client_gen.go")
-	file, err := os.Create(outputPath)
-	if err != nil {
-		return fmt.Errorf("failed to create file: %w", err)
+// SetPostProcessorChain allows overriding the default post-processor chain
+func SetPostProcessorChain(chain *postprocessor.Chain) {
+	if chain != nil {
+		defaultPostProcessorChain = chain
 	}
-	defer file.Close()
+}
 
-	// Execute the template
-	if err := tmpl.ExecuteTemplate(file, filepath.Base(templatePath), data); err != nil {
-		return fmt.Errorf("failed to execute template: %w", err)
-	}
-
-	return nil
+// GetPostProcessorChain returns the current post-processor chain
+func GetPostProcessorChain() *postprocessor.Chain {
+	return defaultPostProcessorChain
 }
