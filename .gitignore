@@ -9,9 +9,9 @@ output_downloads
 build/datastax/*
 cover.out
 coverage.out
+*coverage*.out
 cover.xml
 coverage.html
-*_coverage.out
 .DS_Store
 .vscode**
 !.envrc.example
