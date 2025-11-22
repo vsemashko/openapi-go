@@ -42,9 +42,17 @@ type SpecFailure struct {
 // Parameters:
 // - ctx: Context for cancellation and timeouts
 // - cfg: Configuration containing specs directory, output directory, and target services pattern
+// - optionalLogger: Optional structured logger (if not provided, uses standard log package)
 //
 // Returns an error if the process fails at any stage.
-func ProcessOpenAPISpecs(ctx context.Context, cfg config.Config) error {
+func ProcessOpenAPISpecs(ctx context.Context, cfg config.Config, optionalLogger ...interface{}) error {
+	// Extract logger if provided (for future migration to structured logging)
+	// For now, we still use log.Printf in most places, but this allows gradual migration
+	var _ interface{} = nil
+	if len(optionalLogger) > 0 {
+		_ = optionalLogger[0]
+		// Future: Use structured logger throughout
+	}
 	// Setup the client output directory
 	clientOutputDir := filepath.Join(cfg.OutputDir, "clients")
 	if err := os.MkdirAll(clientOutputDir, os.ModePerm); err != nil {

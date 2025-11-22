@@ -25,3 +25,9 @@ spec_file_patterns:
   - "openapi.json"
   - "openapi.yaml"
   - "openapi.yml"
+
+# Logging configuration
+# log_level: debug, info, warn, error (default: info)
+# log_format: json, text (default: json)
+log_level: "info"
+log_format: "json"
