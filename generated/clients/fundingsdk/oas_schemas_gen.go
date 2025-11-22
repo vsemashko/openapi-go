@@ -460,6 +460,7 @@ func (s *BatchWithdrawalApprovalResponseDto) SetWithdrawalIds(val []string) {
 
 type Bearer struct {
 	Token string
+	Roles []string
 }
 
 // GetToken returns the value of Token.
@@ -467,9 +468,19 @@ func (s *Bearer) GetToken() string {
 	return s.Token
 }
 
+// GetRoles returns the value of Roles.
+func (s *Bearer) GetRoles() []string {
+	return s.Roles
+}
+
 // SetToken sets the value of Token.
 func (s *Bearer) SetToken(val string) {
 	s.Token = val
+}
+
+// SetRoles sets the value of Roles.
+func (s *Bearer) SetRoles(val []string) {
+	s.Roles = val
 }
 
 // Ref: #/components/schemas/CancelIntergoalTransferDTO

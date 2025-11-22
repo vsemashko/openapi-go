@@ -42,7 +42,7 @@ func main() {
 		log.Fatalf("Failed to check holidays: %v", err)
 	}
 
-	fmt.Printf("Is today (%s) a holiday? %s", today, isHolidayResp)
+	fmt.Printf("Is today (%s) a holiday? %+v", today, isHolidayResp)
 
 	// Example 2: Get upcoming holidays (internal endpoint)
 	fmt.Println("\nExample 2: Get upcoming holidays")
@@ -78,5 +78,5 @@ func main() {
 	})
 
 	// For the example, show mock data:
-	fmt.Printf("Deposit records for account %s: %s\n", accountUUID, depositRecords)
+	fmt.Printf("Deposit records for account %s: %+v\n", accountUUID, depositRecords)
 }
