@@ -1,8 +1,84 @@
 stages:
+  - test
+  - build
   - update
 
 variables:
   GOLANG_VERSION: "1.24.0"
+  COVERAGE_THRESHOLD: "75.0"  # Minimum test coverage percentage
+
+# ==============================
+# TEST STAGE
+# ==============================
+
+test:unit:
+  stage: test
+  image: golang:$GOLANG_VERSION
+  before_script:
+    - apk add --no-cache git
+    - go version
+  script:
+    - echo "Running unit tests with coverage..."
+    - go test ./internal/... -v -race -coverprofile=coverage.out -covermode=atomic
+    - go tool cover -func=coverage.out
+    - |
+      # Extract coverage percentage
+      COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
+      echo "Test coverage: ${COVERAGE}%"
+      echo "Coverage threshold: ${COVERAGE_THRESHOLD}%"
+
+      # Check if coverage meets threshold
+      if awk "BEGIN {exit !($COVERAGE >= $COVERAGE_THRESHOLD)}"; then
+        echo "✓ Coverage check passed: ${COVERAGE}% >= ${COVERAGE_THRESHOLD}%"
+      else
+        echo "✗ Coverage check failed: ${COVERAGE}% < ${COVERAGE_THRESHOLD}%"
+        exit 1
+      fi
+  coverage: '/total:\s+\(statements\)\s+(\d+\.\d+)%/'
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.out
+    paths:
+      - coverage.out
+    expire_in: 30 days
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+
+test:lint:
+  stage: test
+  image: golangci/golangci-lint:v1.62-alpine
+  script:
+    - echo "Running golangci-lint..."
+    - golangci-lint run ./... --timeout=5m
+  allow_failure: true  # Don't block on lint warnings initially
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+
+# ==============================
+# BUILD STAGE
+# ==============================
+
+build:verify:
+  stage: build
+  image: golang:$GOLANG_VERSION
+  needs: [test:unit]  # Wait for tests to pass
+  before_script:
+    - apk add --no-cache git task
+  script:
+    - echo "Verifying build..."
+    - go build -v ./...
+    - echo "Build successful"
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+
+# ==============================
+# UPDATE STAGE
+# ==============================
 
 update-sdk:
   stage: update
