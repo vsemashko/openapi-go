@@ -1,0 +1,356 @@
+package spec
+
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
+
+func TestParseSpecFile(t *testing.T) {
+	tests := []struct {
+		name    string
+		spec    string
+		wantErr bool
+	}{
+		{
+			name: "valid minimal spec",
+			spec: `{
+				"openapi": "3.0.0",
+				"info": {"title": "Test API", "version": "1.0.0"},
+				"paths": {}
+			}`,
+			wantErr: false,
+		},
+		{
+			name: "spec with security schemes",
+			spec: `{
+				"openapi": "3.0.0",
+				"info": {"title": "Test API", "version": "1.0.0"},
+				"components": {
+					"securitySchemes": {
+						"bearerAuth": {
+							"type": "http",
+							"scheme": "bearer",
+							"bearerFormat": "JWT"
+						}
+					}
+				},
+				"paths": {}
+			}`,
+			wantErr: false,
+		},
+		{
+			name: "invalid JSON",
+			spec: `{invalid json}`,
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create temporary spec file
+			tmpFile := filepath.Join(t.TempDir(), "openapi.json")
+			err := os.WriteFile(tmpFile, []byte(tt.spec), 0644)
+			if err != nil {
+				t.Fatalf("Failed to create test file: %v", err)
+			}
+
+			// Parse spec
+			spec, err := ParseSpecFile(tmpFile)
+
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ParseSpecFile() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			if err == nil {
+				// Verify spec was parsed
+				if spec.OpenAPI == "" {
+					t.Error("ParseSpecFile() returned spec with empty openapi field")
+				}
+			}
+		})
+	}
+}
+
+func TestParseSpecFileNonexistent(t *testing.T) {
+	_, err := ParseSpecFile("/nonexistent/file.json")
+	if err == nil {
+		t.Error("ParseSpecFile() should error for nonexistent file")
+	}
+}
+
+func TestHasSecurity(t *testing.T) {
+	tests := []struct {
+		name     string
+		spec     string
+		expected bool
+	}{
+		{
+			name: "has bearer auth security scheme",
+			spec: `{
+				"openapi": "3.0.0",
+				"info": {"title": "Test", "version": "1.0"},
+				"components": {
+					"securitySchemes": {
+						"bearerAuth": {
+							"type": "http",
+							"scheme": "bearer"
+						}
+					}
+				}
+			}`,
+			expected: true,
+		},
+		{
+			name: "has api key security scheme",
+			spec: `{
+				"openapi": "3.0.0",
+				"info": {"title": "Test", "version": "1.0"},
+				"components": {
+					"securitySchemes": {
+						"apiKey": {
+							"type": "apiKey",
+							"in": "header",
+							"name": "X-API-Key"
+						}
+					}
+				}
+			}`,
+			expected: true,
+		},
+		{
+			name: "has global security requirement",
+			spec: `{
+				"openapi": "3.0.0",
+				"info": {"title": "Test", "version": "1.0"},
+				"security": [{"apiKey": []}],
+				"components": {
+					"securitySchemes": {
+						"apiKey": {
+							"type": "apiKey",
+							"in": "header",
+							"name": "X-API-Key"
+						}
+					}
+				}
+			}`,
+			expected: true,
+		},
+		{
+			name: "no security",
+			spec: `{
+				"openapi": "3.0.0",
+				"info": {"title": "Test", "version": "1.0"},
+				"paths": {}
+			}`,
+			expected: false,
+		},
+		{
+			name: "empty security schemes",
+			spec: `{
+				"openapi": "3.0.0",
+				"info": {"title": "Test", "version": "1.0"},
+				"components": {
+					"securitySchemes": {}
+				}
+			}`,
+			expected: false,
+		},
+		{
+			name: "components but no security schemes",
+			spec: `{
+				"openapi": "3.0.0",
+				"info": {"title": "Test", "version": "1.0"},
+				"components": {
+					"schemas": {
+						"User": {
+							"type": "object",
+							"properties": {
+								"id": {"type": "string"}
+							}
+						}
+					}
+				}
+			}`,
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Write spec to temp file
+			tmpFile := filepath.Join(t.TempDir(), "spec.json")
+			err := os.WriteFile(tmpFile, []byte(tt.spec), 0644)
+			if err != nil {
+				t.Fatalf("Failed to create test file: %v", err)
+			}
+
+			// Parse spec
+			spec, err := ParseSpecFile(tmpFile)
+			if err != nil {
+				t.Fatalf("ParseSpecFile() error = %v", err)
+			}
+
+			// Check security
+			result := spec.HasSecurity()
+			if result != tt.expected {
+				t.Errorf("HasSecurity() = %v, want %v", result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestGetSecuritySchemes(t *testing.T) {
+	tests := []struct {
+		name          string
+		spec          string
+		expectedCount int
+		expectedNames []string
+	}{
+		{
+			name: "single bearer auth",
+			spec: `{
+				"openapi": "3.0.0",
+				"info": {"title": "Test", "version": "1.0"},
+				"components": {
+					"securitySchemes": {
+						"bearerAuth": {
+							"type": "http",
+							"scheme": "bearer"
+						}
+					}
+				}
+			}`,
+			expectedCount: 1,
+			expectedNames: []string{"bearerAuth"},
+		},
+		{
+			name: "multiple security schemes",
+			spec: `{
+				"openapi": "3.0.0",
+				"info": {"title": "Test", "version": "1.0"},
+				"components": {
+					"securitySchemes": {
+						"bearerAuth": {
+							"type": "http",
+							"scheme": "bearer"
+						},
+						"apiKey": {
+							"type": "apiKey",
+							"in": "header",
+							"name": "X-API-Key"
+						}
+					}
+				}
+			}`,
+			expectedCount: 2,
+			expectedNames: []string{"bearerAuth", "apiKey"},
+		},
+		{
+			name: "no security schemes",
+			spec: `{
+				"openapi": "3.0.0",
+				"info": {"title": "Test", "version": "1.0"}
+			}`,
+			expectedCount: 0,
+			expectedNames: []string{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Write spec to temp file
+			tmpFile := filepath.Join(t.TempDir(), "spec.json")
+			err := os.WriteFile(tmpFile, []byte(tt.spec), 0644)
+			if err != nil {
+				t.Fatalf("Failed to create test file: %v", err)
+			}
+
+			// Parse spec
+			spec, err := ParseSpecFile(tmpFile)
+			if err != nil {
+				t.Fatalf("ParseSpecFile() error = %v", err)
+			}
+
+			// Get security schemes
+			schemes := spec.GetSecuritySchemes()
+
+			// Check count
+			if len(schemes) != tt.expectedCount {
+				t.Errorf("GetSecuritySchemes() count = %d, want %d", len(schemes), tt.expectedCount)
+			}
+
+			// Check expected names are present
+			for _, name := range tt.expectedNames {
+				if _, ok := schemes[name]; !ok {
+					t.Errorf("GetSecuritySchemes() missing expected scheme: %s", name)
+				}
+			}
+		})
+	}
+}
+
+func TestSecuritySchemeTypes(t *testing.T) {
+	spec := `{
+		"openapi": "3.0.0",
+		"info": {"title": "Test", "version": "1.0"},
+		"components": {
+			"securitySchemes": {
+				"bearerAuth": {
+					"type": "http",
+					"scheme": "bearer",
+					"bearerFormat": "JWT"
+				},
+				"apiKey": {
+					"type": "apiKey",
+					"in": "header",
+					"name": "X-API-Key"
+				}
+			}
+		}
+	}`
+
+	tmpFile := filepath.Join(t.TempDir(), "spec.json")
+	err := os.WriteFile(tmpFile, []byte(spec), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	parsed, err := ParseSpecFile(tmpFile)
+	if err != nil {
+		t.Fatalf("ParseSpecFile() error = %v", err)
+	}
+
+	schemes := parsed.GetSecuritySchemes()
+
+	// Verify bearer auth properties
+	if bearer, ok := schemes["bearerAuth"]; ok {
+		if bearer.Type != "http" {
+			t.Errorf("bearerAuth.Type = %q, want %q", bearer.Type, "http")
+		}
+		if bearer.Scheme != "bearer" {
+			t.Errorf("bearerAuth.Scheme = %q, want %q", bearer.Scheme, "bearer")
+		}
+		if bearer.BearerFormat != "JWT" {
+			t.Errorf("bearerAuth.BearerFormat = %q, want %q", bearer.BearerFormat, "JWT")
+		}
+	} else {
+		t.Error("bearerAuth scheme not found")
+	}
+
+	// Verify API key properties
+	if apiKey, ok := schemes["apiKey"]; ok {
+		if apiKey.Type != "apiKey" {
+			t.Errorf("apiKey.Type = %q, want %q", apiKey.Type, "apiKey")
+		}
+		if apiKey.In != "header" {
+			t.Errorf("apiKey.In = %q, want %q", apiKey.In, "header")
+		}
+		if apiKey.Name != "X-API-Key" {
+			t.Errorf("apiKey.Name = %q, want %q", apiKey.Name, "X-API-Key")
+		}
+	} else {
+		t.Error("apiKey scheme not found")
+	}
+}

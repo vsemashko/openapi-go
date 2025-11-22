@@ -8,6 +8,7 @@ csv
 output_downloads
 build/datastax/*
 cover.out
+coverage.out
 cover.xml
 .DS_Store
 .vscode**
