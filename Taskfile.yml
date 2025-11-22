@@ -9,13 +9,29 @@ tasks:
   # ==============================
   
   generate:
-    desc: Update submodules to latest and generate clients
+    desc: Generate clients from pinned submodule commit
     summary: |
-      Updates git submodules to the latest version and generates Go clients from OpenAPI specs.
-      This task is used both for local development and CI/CD pipelines.
+      Generates Go clients from OpenAPI specs using the pinned submodule commit.
+      This ensures deterministic builds. To update the submodule first, use 'task update-submodule'.
     cmds:
       - task: init
       - task: generate-code
+
+  update-submodule:
+    desc: Update submodule to latest commit (explicit action)
+    summary: |
+      Updates the SDK submodule to the latest commit on main branch.
+      After running this, review the changes and commit if desired to pin the new version.
+
+      Usage:
+        task update-submodule
+        git status  # Review submodule changes
+        git add external/sdk
+        git commit -m "chore: Update SDK submodule to latest"
+    cmds:
+      - echo "Updating SDK submodule to latest commit on main..."
+      - cd external/sdk && git checkout main && git pull origin main && cd ../..
+      - echo "✓ Submodule updated. Review changes with 'git status' and commit if desired."
 
   # ==============================
   # UTILITY TASKS - INTERNAL USE
@@ -23,14 +39,12 @@ tasks:
   
   init:
     internal: true
-    desc: Initialize git submodules and update to latest
+    desc: Initialize git submodules using pinned commit
     cmds:
-      # First ensure submodules are initialized
+      # Initialize and update submodules to the commit referenced in the parent repo
+      # This ensures deterministic builds by using the pinned commit
       - git submodule update --init --recursive
-      # Then update the SDK submodule to the latest commit on main branch
-      # This is needed because git submodule update only updates to the commit referenced in the parent repo
-      - echo "Updating SDK submodule to the latest commit on main branch..."
-      - cd external/sdk && git checkout main && git pull origin main && cd ../..
+      - echo "✓ Submodules initialized to pinned commits"
     status:
       - test -f external/sdk/sdk-packages/aml-sdk/openapi.json
 
