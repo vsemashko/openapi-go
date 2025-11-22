@@ -14,6 +14,7 @@ import (
 	"gitlab.stashaway.com/vladimir.semashko/openapi-go/internal/generator"
 	"gitlab.stashaway.com/vladimir.semashko/openapi-go/internal/metrics"
 	"gitlab.stashaway.com/vladimir.semashko/openapi-go/internal/paths"
+	"gitlab.stashaway.com/vladimir.semashko/openapi-go/internal/spec"
 	"gitlab.stashaway.com/vladimir.semashko/openapi-go/internal/validator"
 	"gitlab.stashaway.com/vladimir.semashko/openapi-go/internal/worker"
 )
@@ -227,13 +228,21 @@ func generateClients(ctx context.Context, specs []string, outputDir string, cont
 				// Start timing for metrics
 				startTime := time.Now()
 
-				// Check cache if available
+				// Parse spec and create operation fingerprint (for both caching and validation)
+				parsedSpec, parseErr := spec.ParseSpecFile(currentSpecPath)
+				var fingerprint *spec.SpecFingerprint
+				if parseErr == nil {
+					fingerprint, _ = spec.CreateSpecFingerprint(currentSpecPath, parsedSpec)
+				}
+
+				// Check cache if available (using incremental validation)
 				if specCache != nil {
-					valid, err := specCache.IsValid(currentSpecPath, defaultGenerator.Version())
+					// Check cache using incremental validation
+					valid, comparison, err := specCache.IsValidIncremental(currentSpecPath, defaultGenerator.Version(), fingerprint)
 					if err != nil {
 						log.Printf("Warning: Cache check failed for %s: %v", serviceName, err)
 					} else if valid {
-						log.Printf("⚡ Using cached client for %s (spec unchanged)", folderName)
+						log.Printf("⚡ Using cached client for %s (no operation changes detected)", folderName)
 
 						// Record cached metric
 						metricsCollector.RecordSpec(metrics.SpecMetric{
@@ -245,6 +254,9 @@ func generateClients(ctx context.Context, specs []string, outputDir string, cont
 							GeneratedAt: time.Now(),
 						})
 						return nil
+					} else if comparison != nil && comparison.HasChanges() {
+						// Log what changed
+						log.Printf("Regenerating %s: %s", serviceName, comparison.Summary())
 					}
 				}
 
@@ -279,9 +291,9 @@ func generateClients(ctx context.Context, specs []string, outputDir string, cont
 					GeneratedAt: time.Now(),
 				})
 
-				// Update cache on success
+				// Update cache on success with operation fingerprint
 				if specCache != nil {
-					if err := specCache.Set(currentSpecPath, clientPath, serviceName, defaultGenerator.Version()); err != nil {
+					if err := specCache.SetWithFingerprint(currentSpecPath, clientPath, serviceName, defaultGenerator.Version(), fingerprint); err != nil {
 						log.Printf("Warning: Failed to update cache for %s: %v", serviceName, err)
 					}
 				}
@@ -364,13 +376,20 @@ func generateClientsSequential(ctx context.Context, specs []string, outputDir st
 		// Start timing for metrics
 		startTime := time.Now()
 
-		// Check cache if available
+		// Parse spec and create operation fingerprint (for both caching and validation)
+		parsedSpec, parseErr := spec.ParseSpecFile(specPath)
+		var fingerprint *spec.SpecFingerprint
+		if parseErr == nil {
+			fingerprint, _ = spec.CreateSpecFingerprint(specPath, parsedSpec)
+		}
+
+		// Check cache if available (using incremental validation)
 		if specCache != nil {
-			valid, err := specCache.IsValid(specPath, defaultGenerator.Version())
+			valid, comparison, err := specCache.IsValidIncremental(specPath, defaultGenerator.Version(), fingerprint)
 			if err != nil {
 				log.Printf("Warning: Cache check failed for %s: %v", serviceName, err)
 			} else if valid {
-				log.Printf("⚡ Using cached client for %s (spec unchanged)", folderName)
+				log.Printf("⚡ Using cached client for %s (no operation changes detected)", folderName)
 				result.SuccessCount++
 
 				// Record cached metric
@@ -383,6 +402,9 @@ func generateClientsSequential(ctx context.Context, specs []string, outputDir st
 					GeneratedAt: time.Now(),
 				})
 				continue
+			} else if comparison != nil && comparison.HasChanges() {
+				// Log what changed
+				log.Printf("Regenerating %s: %s", serviceName, comparison.Summary())
 			}
 		}
 
@@ -430,9 +452,9 @@ func generateClientsSequential(ctx context.Context, specs []string, outputDir st
 				GeneratedAt: time.Now(),
 			})
 
-			// Update cache on success
+			// Update cache on success with operation fingerprint
 			if specCache != nil {
-				if err := specCache.Set(specPath, clientPath, serviceName, defaultGenerator.Version()); err != nil {
+				if err := specCache.SetWithFingerprint(specPath, clientPath, serviceName, defaultGenerator.Version(), fingerprint); err != nil {
 					log.Printf("Warning: Failed to update cache for %s: %v", serviceName, err)
 				}
 			}

@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	"gitlab.stashaway.com/vladimir.semashko/openapi-go/internal/spec"
 )
 
 // Entry represents a cache entry for a generated client
@@ -22,6 +24,8 @@ type Entry struct {
 	ServiceName string `json:"service_name"`
 	// GeneratorVersion is the version of the generator used
 	GeneratorVersion string `json:"generator_version"`
+	// OperationFingerprint contains operation-level fingerprints for incremental generation
+	OperationFingerprint *spec.SpecFingerprint `json:"operation_fingerprint,omitempty"`
 }
 
 // Cache manages a hash-based cache for OpenAPI client generation
@@ -110,6 +114,11 @@ func (c *Cache) IsValid(specPath, generatorVersion string) (bool, error) {
 
 // Set adds or updates a cache entry
 func (c *Cache) Set(specPath, outputPath, serviceName, generatorVersion string) error {
+	return c.SetWithFingerprint(specPath, outputPath, serviceName, generatorVersion, nil)
+}
+
+// SetWithFingerprint adds or updates a cache entry with operation fingerprint
+func (c *Cache) SetWithFingerprint(specPath, outputPath, serviceName, generatorVersion string, fingerprint *spec.SpecFingerprint) error {
 	// Compute spec hash
 	hash, err := computeFileHash(specPath)
 	if err != nil {
@@ -118,11 +127,12 @@ func (c *Cache) Set(specPath, outputPath, serviceName, generatorVersion string) 
 
 	// Create entry
 	entry := &Entry{
-		SpecHash:         hash,
-		GeneratedAt:      time.Now(),
-		OutputPath:       outputPath,
-		ServiceName:      serviceName,
-		GeneratorVersion: generatorVersion,
+		SpecHash:             hash,
+		GeneratedAt:          time.Now(),
+		OutputPath:           outputPath,
+		ServiceName:          serviceName,
+		GeneratorVersion:     generatorVersion,
+		OperationFingerprint: fingerprint,
 	}
 
 	// Store in memory
@@ -134,6 +144,48 @@ func (c *Cache) Set(specPath, outputPath, serviceName, generatorVersion string) 
 	}
 
 	return nil
+}
+
+// IsValidIncremental checks if a cache entry is valid using operation fingerprints
+// This allows skipping regeneration if only comments/descriptions changed
+func (c *Cache) IsValidIncremental(specPath, generatorVersion string, currentFingerprint *spec.SpecFingerprint) (bool, *spec.FingerprintComparison, error) {
+	// Get cached entry
+	entry, exists := c.entries[specPath]
+	if !exists {
+		return false, nil, nil
+	}
+
+	// Check generator version
+	if entry.GeneratorVersion != generatorVersion {
+		return false, nil, nil
+	}
+
+	// Verify output directory still exists
+	if _, err := os.Stat(entry.OutputPath); os.IsNotExist(err) {
+		return false, nil, nil
+	}
+
+	// If no operation fingerprint in cache (old cache format), fall back to file hash
+	if entry.OperationFingerprint == nil {
+		valid, err := c.IsValid(specPath, generatorVersion)
+		return valid, nil, err
+	}
+
+	// If no current fingerprint provided, fall back to file hash
+	if currentFingerprint == nil {
+		valid, err := c.IsValid(specPath, generatorVersion)
+		return valid, nil, err
+	}
+
+	// Compare operation fingerprints
+	comparison := spec.CompareFingerprints(entry.OperationFingerprint, currentFingerprint)
+
+	// Cache is valid if no operations changed
+	if !comparison.HasChanges() {
+		return true, comparison, nil
+	}
+
+	return false, comparison, nil
 }
 
 // Get retrieves a cache entry
