@@ -39,6 +39,10 @@ type Config struct {
 	// CacheDir is the directory where cache metadata is stored
 	// Default: .openapi-cache
 	CacheDir string `mapstructure:"cache_dir"`
+
+	// SpecFilePatterns are the filenames to look for when discovering OpenAPI specs
+	// Default: ["openapi.json", "openapi.yaml", "openapi.yml"]
+	SpecFilePatterns []string `mapstructure:"spec_file_patterns"`
 }
 
 // LoadConfig initializes Viper and loads configuration from application.yml
@@ -88,6 +92,11 @@ func LoadConfig() (Config, error) {
 
 	if cfg.CacheDir == "" {
 		cfg.CacheDir = ".openapi-cache"
+	}
+
+	// Set default spec file patterns if not specified
+	if len(cfg.SpecFilePatterns) == 0 {
+		cfg.SpecFilePatterns = []string{"openapi.json", "openapi.yaml", "openapi.yml"}
 	}
 
 	// Convert relative paths to absolute paths
@@ -144,5 +153,6 @@ func LogConfiguration(cfg Config) {
 	log.Printf("  Worker count: %d", cfg.WorkerCount)
 	log.Printf("  Enable cache: %v", cfg.EnableCache)
 	log.Printf("  Cache directory: %s", cfg.CacheDir)
+	log.Printf("  Spec file patterns: %v", cfg.SpecFilePatterns)
 	log.Printf("  Ogen config: %s", paths.GetOgenConfigPath())
 }

@@ -12,12 +12,13 @@ import (
 
 func TestFindOpenAPISpecs(t *testing.T) {
 	tests := []struct {
-		name           string
-		setupSpecs     func(string) error
-		targetServices string
-		expectedCount  int
-		wantErr        bool
-		errContains    string
+		name             string
+		setupSpecs       func(string) error
+		targetServices   string
+		specFilePatterns []string
+		expectedCount    int
+		wantErr          bool
+		errContains      string
 	}{
 		{
 			name: "find all specs (empty filter)",
@@ -110,6 +111,117 @@ func TestFindOpenAPISpecs(t *testing.T) {
 			expectedCount:  1,
 			wantErr:        false,
 		},
+		{
+			name: "find YAML specs",
+			setupSpecs: func(dir string) error {
+				// Create service with openapi.yaml
+				svcDir := filepath.Join(dir, "yaml-service-sdk")
+				if err := os.MkdirAll(svcDir, 0755); err != nil {
+					return err
+				}
+				yamlContent := `openapi: 3.0.0
+info:
+  title: YAML API
+  version: 1.0.0
+paths: {}`
+				return os.WriteFile(filepath.Join(svcDir, "openapi.yaml"), []byte(yamlContent), 0644)
+			},
+			targetServices:   "",
+			specFilePatterns: []string{"openapi.yaml"},
+			expectedCount:    1,
+			wantErr:          false,
+		},
+		{
+			name: "find YML specs",
+			setupSpecs: func(dir string) error {
+				// Create service with openapi.yml
+				svcDir := filepath.Join(dir, "yml-service-sdk")
+				if err := os.MkdirAll(svcDir, 0755); err != nil {
+					return err
+				}
+				ymlContent := `openapi: 3.0.0
+info:
+  title: YML API
+  version: 1.0.0
+paths: {}`
+				return os.WriteFile(filepath.Join(svcDir, "openapi.yml"), []byte(ymlContent), 0644)
+			},
+			targetServices:   "",
+			specFilePatterns: []string{"openapi.yml"},
+			expectedCount:    1,
+			wantErr:          false,
+		},
+		{
+			name: "find mixed JSON and YAML specs",
+			setupSpecs: func(dir string) error {
+				// Create JSON service
+				jsonSvcDir := filepath.Join(dir, "json-service-sdk")
+				if err := os.MkdirAll(jsonSvcDir, 0755); err != nil {
+					return err
+				}
+				if err := os.WriteFile(filepath.Join(jsonSvcDir, "openapi.json"), []byte(`{"openapi":"3.0.0"}`), 0644); err != nil {
+					return err
+				}
+
+				// Create YAML service
+				yamlSvcDir := filepath.Join(dir, "yaml-service-sdk")
+				if err := os.MkdirAll(yamlSvcDir, 0755); err != nil {
+					return err
+				}
+				yamlContent := `openapi: 3.0.0
+info:
+  title: YAML API
+  version: 1.0.0
+paths: {}`
+				if err := os.WriteFile(filepath.Join(yamlSvcDir, "openapi.yaml"), []byte(yamlContent), 0644); err != nil {
+					return err
+				}
+
+				// Create YML service
+				ymlSvcDir := filepath.Join(dir, "yml-service-sdk")
+				if err := os.MkdirAll(ymlSvcDir, 0755); err != nil {
+					return err
+				}
+				ymlContent := `openapi: 3.0.0
+info:
+  title: YML API
+  version: 1.0.0
+paths: {}`
+				return os.WriteFile(filepath.Join(ymlSvcDir, "openapi.yml"), []byte(ymlContent), 0644)
+			},
+			targetServices:   "",
+			specFilePatterns: []string{"openapi.json", "openapi.yaml", "openapi.yml"},
+			expectedCount:    3,
+			wantErr:          false,
+		},
+		{
+			name: "YAML patterns only ignore JSON files",
+			setupSpecs: func(dir string) error {
+				// Create services with both JSON and YAML
+				jsonSvcDir := filepath.Join(dir, "json-service-sdk")
+				if err := os.MkdirAll(jsonSvcDir, 0755); err != nil {
+					return err
+				}
+				if err := os.WriteFile(filepath.Join(jsonSvcDir, "openapi.json"), []byte(`{"openapi":"3.0.0"}`), 0644); err != nil {
+					return err
+				}
+
+				yamlSvcDir := filepath.Join(dir, "yaml-service-sdk")
+				if err := os.MkdirAll(yamlSvcDir, 0755); err != nil {
+					return err
+				}
+				yamlContent := `openapi: 3.0.0
+info:
+  title: YAML API
+  version: 1.0.0
+paths: {}`
+				return os.WriteFile(filepath.Join(yamlSvcDir, "openapi.yaml"), []byte(yamlContent), 0644)
+			},
+			targetServices:   "",
+			specFilePatterns: []string{"openapi.yaml", "openapi.yml"}, // only YAML patterns
+			expectedCount:    1,                                         // should find only YAML, not JSON
+			wantErr:          false,
+		},
 	}
 
 	for _, tt := range tests {
@@ -125,7 +237,11 @@ func TestFindOpenAPISpecs(t *testing.T) {
 			}
 
 			// Run findOpenAPISpecs
-			specs, err := findOpenAPISpecs(tmpDir, tt.targetServices)
+			patterns := tt.specFilePatterns
+			if patterns == nil {
+				patterns = []string{"openapi.json"} // default for existing tests
+			}
+			specs, err := findOpenAPISpecs(tmpDir, tt.targetServices, patterns)
 
 			// Check error expectations
 			if (err != nil) != tt.wantErr {
@@ -145,10 +261,18 @@ func TestFindOpenAPISpecs(t *testing.T) {
 				t.Errorf("findOpenAPISpecs() found %d specs, expected %d", len(specs), tt.expectedCount)
 			}
 
-			// Verify all found specs exist and are named openapi.json
+			// Verify all found specs exist and match one of the expected patterns
 			for _, specPath := range specs {
-				if filepath.Base(specPath) != "openapi.json" {
-					t.Errorf("Expected spec file to be named openapi.json, got %s", filepath.Base(specPath))
+				filename := filepath.Base(specPath)
+				validName := false
+				for _, pattern := range patterns {
+					if filename == pattern {
+						validName = true
+						break
+					}
+				}
+				if !validName {
+					t.Errorf("Expected spec file to match patterns %v, got %s", patterns, filename)
 				}
 				if _, err := os.Stat(specPath); os.IsNotExist(err) {
 					t.Errorf("Spec file does not exist: %s", specPath)

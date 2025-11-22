@@ -52,7 +52,7 @@ func ProcessOpenAPISpecs(ctx context.Context, cfg config.Config) error {
 	}
 
 	// Find OpenAPI specs
-	specs, err := findOpenAPISpecs(cfg.SpecsDir, cfg.TargetServices)
+	specs, err := findOpenAPISpecs(cfg.SpecsDir, cfg.TargetServices, cfg.SpecFilePatterns)
 	if err != nil {
 		return err
 	}
@@ -94,18 +94,37 @@ func ProcessOpenAPISpecs(ctx context.Context, cfg config.Config) error {
 }
 
 // findOpenAPISpecs searches for OpenAPI specs in the given directory.
-func findOpenAPISpecs(specsDir string, targetServices string) ([]string, error) {
+func findOpenAPISpecs(specsDir string, targetServices string, specFilePatterns []string) ([]string, error) {
 	// Compile service regex for filtering
 	serviceRegex, err := compileServiceRegex(targetServices)
 	if err != nil {
 		return nil, err
 	}
 
+	// If no patterns specified, use default
+	if len(specFilePatterns) == 0 {
+		specFilePatterns = []string{"openapi.json", "openapi.yaml", "openapi.yml"}
+	}
+
 	var specs []string
 
 	err = filepath.Walk(specsDir, func(path string, info os.FileInfo, err error) error {
-		// Skip directories and non-OpenAPI files
-		if err != nil || info.IsDir() || filepath.Base(path) != "openapi.json" {
+		// Skip directories and errors
+		if err != nil || info.IsDir() {
+			return nil
+		}
+
+		// Check if filename matches any of the spec file patterns
+		filename := filepath.Base(path)
+		isSpecFile := false
+		for _, pattern := range specFilePatterns {
+			if filename == pattern {
+				isSpecFile = true
+				break
+			}
+		}
+
+		if !isSpecFile {
 			return nil
 		}
 
