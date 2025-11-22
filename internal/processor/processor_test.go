@@ -1,9 +1,11 @@
 package processor
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"gitlab.stashaway.com/vladimir.semashko/openapi-go/internal/config"
 )
@@ -212,8 +214,11 @@ func TestGenerateClients(t *testing.T) {
 				t.Fatalf("Failed to setup specs: %v", err)
 			}
 
-			// Run generateClients
-			result, err := generateClients(specs, outputDir, tt.continueOnError)
+			// Run generateClients with context
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+
+			result, err := generateClients(ctx, specs, outputDir, tt.continueOnError)
 
 			// Check error expectations
 			if (err != nil) != tt.wantErr {
@@ -348,7 +353,10 @@ func TestProcessOpenAPISpecsValidation(t *testing.T) {
 			tmpDir := t.TempDir()
 			cfg := tt.setupConfig(tmpDir)
 
-			err := ProcessOpenAPISpecs(cfg)
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+
+			err := ProcessOpenAPISpecs(ctx, cfg)
 
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ProcessOpenAPISpecs() error = %v, wantErr %v", err, tt.wantErr)
@@ -364,11 +372,11 @@ func TestProcessOpenAPISpecsValidation(t *testing.T) {
 	}
 }
 
-func TestIsOgenInstalled(t *testing.T) {
-	// This test just verifies the function doesn't panic
-	// Actual result depends on whether ogen is installed in test environment
-	result := isOgenInstalled()
-	t.Logf("isOgenInstalled() = %v", result)
+func TestGeneratorIsInstalled(t *testing.T) {
+	// This test just verifies the generator check doesn't panic
+	// Actual result depends on whether the generator is installed in test environment
+	result := defaultGenerator.IsInstalled()
+	t.Logf("defaultGenerator.IsInstalled() = %v (generator: %s)", result, defaultGenerator.Name())
 
 	// No assertions - this is environment-dependent
 	// The function should at least not panic
