@@ -2,16 +2,20 @@ package processor
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"text/template"
+
+	"gitlab.stashaway.com/vladimir.semashko/openapi-go/internal/paths"
+	"gitlab.stashaway.com/vladimir.semashko/openapi-go/internal/spec"
 )
 
 // ApplyPostProcessors applies post-processing steps to the generated client code.
 // This includes creating additional client files with convenience functions.
-func ApplyPostProcessors(clientPath, serviceName string) error {
+func ApplyPostProcessors(clientPath, serviceName, specPath string) error {
 	// Generate the internal client file
-	if err := generateInternalClientFile(clientPath, serviceName); err != nil {
+	if err := generateInternalClientFile(clientPath, serviceName, specPath); err != nil {
 		return fmt.Errorf("failed to generate internal client file: %w", err)
 	}
 
@@ -20,16 +24,24 @@ func ApplyPostProcessors(clientPath, serviceName string) error {
 
 // generateInternalClientFile creates a file with the NewInternalClient function
 // that initializes a client with base security for internal endpoints.
-func generateInternalClientFile(clientPath, serviceName string) error {
-	// Path to the template file
-	templatePath := "resources/templates/internal_client.tmpl"
+func generateInternalClientFile(clientPath, serviceName, specPath string) error {
+	// Use absolute path to template
+	templatePath := paths.GetInternalClientTemplatePath()
 
-	// Check if the client has security by looking for the security file
-	securityFilePath := filepath.Join(clientPath, "oas_security_gen.go")
-	hasSecurity := false
-	if _, err := os.Stat(securityFilePath); err == nil {
-		hasSecurity = true
+	// Verify template exists
+	if err := paths.EnsurePathExists(templatePath); err != nil {
+		return fmt.Errorf("template not found: %w", err)
 	}
+
+	// Parse OpenAPI spec to detect security requirements
+	hasSecurity, err := detectSecurityFromSpec(specPath)
+	if err != nil {
+		// Fall back to file-based detection if spec parsing fails
+		log.Printf("Warning: Failed to parse spec for security detection, falling back to file check: %v", err)
+		hasSecurity = detectSecurityFromGeneratedFiles(clientPath)
+	}
+
+	log.Printf("Security detection for %s: hasSecurity=%v", serviceName, hasSecurity)
 
 	// Create the template data
 	data := struct {
@@ -60,4 +72,21 @@ func generateInternalClientFile(clientPath, serviceName string) error {
 	}
 
 	return nil
+}
+
+// detectSecurityFromSpec parses the OpenAPI spec to check for security schemes
+func detectSecurityFromSpec(specPath string) (bool, error) {
+	openAPISpec, err := spec.ParseSpecFile(specPath)
+	if err != nil {
+		return false, err
+	}
+
+	return openAPISpec.HasSecurity(), nil
+}
+
+// detectSecurityFromGeneratedFiles checks for security file (fallback method)
+func detectSecurityFromGeneratedFiles(clientPath string) bool {
+	securityFilePath := filepath.Join(clientPath, "oas_security_gen.go")
+	_, err := os.Stat(securityFilePath)
+	return err == nil
 }

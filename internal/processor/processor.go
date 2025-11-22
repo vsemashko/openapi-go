@@ -6,9 +6,33 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"gitlab.stashaway.com/vladimir.semashko/openapi-go/internal/config"
+	"gitlab.stashaway.com/vladimir.semashko/openapi-go/internal/paths"
 )
+
+const (
+	// OgenVersion defines the exact ogen version to use for generation
+	// This ensures deterministic builds - same spec always generates same code
+	// IMPORTANT: This version must match the version in go.mod
+	OgenVersion = "v1.14.0"
+	OgenPackage = "github.com/ogen-go/ogen/cmd/ogen"
+)
+
+// ProcessingResult contains the results of processing OpenAPI specs
+type ProcessingResult struct {
+	TotalSpecs   int
+	SuccessCount int
+	FailedSpecs  []SpecFailure
+}
+
+// SpecFailure represents a failed spec generation
+type SpecFailure struct {
+	SpecPath    string
+	ServiceName string
+	Error       error
+}
 
 // ProcessOpenAPISpecs processes OpenAPI specifications and generates client code.
 // It searches for OpenAPI specs in the specified directory that match the targetServices pattern,
@@ -32,12 +56,20 @@ func ProcessOpenAPISpecs(cfg config.Config) error {
 	}
 
 	// Generate clients
-	successCount, err := generateClients(specs, cfg.OutputDir)
+	result, err := generateClients(specs, cfg.OutputDir, cfg.ContinueOnError)
 	if err != nil {
 		return err
 	}
 
-	log.Printf("Successfully processed %d/%d OpenAPI specs", successCount, len(specs))
+	// Log results
+	logProcessingResult(result)
+
+	// Return error if any specs failed (unless continue-on-error is enabled)
+	if !cfg.ContinueOnError && result.SuccessCount < result.TotalSpecs {
+		return fmt.Errorf("failed to generate %d/%d clients",
+			len(result.FailedSpecs), result.TotalSpecs)
+	}
+
 	return nil
 }
 
@@ -80,8 +112,12 @@ func findOpenAPISpecs(specsDir string, targetServices string) ([]string, error) 
 }
 
 // generateClients generates clients for all found OpenAPI specs.
-func generateClients(specs []string, outputDir string) (int, error) {
-	successCount := 0
+func generateClients(specs []string, outputDir string, continueOnError bool) (*ProcessingResult, error) {
+	result := &ProcessingResult{
+		TotalSpecs:   len(specs),
+		SuccessCount: 0,
+		FailedSpecs:  []SpecFailure{},
+	}
 
 	for _, specPath := range specs {
 		serviceDir := filepath.Base(filepath.Dir(specPath))
@@ -90,14 +126,47 @@ func generateClients(specs []string, outputDir string) (int, error) {
 
 		log.Printf("Processing service: %s (spec: %s)", serviceName, specPath)
 
-		if err := generateClientForSpec(specPath, serviceName, folderName, outputDir); err != nil {
-			log.Printf("Warning: Failed to generate client for %s: %v", folderName, err)
+		err := generateClientForSpec(specPath, serviceName, folderName, outputDir)
+		if err != nil {
+			failure := SpecFailure{
+				SpecPath:    specPath,
+				ServiceName: serviceName,
+				Error:       err,
+			}
+			result.FailedSpecs = append(result.FailedSpecs, failure)
+
+			log.Printf("❌ Failed to generate client for %s: %v", folderName, err)
+
+			// Fail fast unless continue-on-error is enabled
+			if !continueOnError {
+				return result, fmt.Errorf("generation failed for %s: %w", serviceName, err)
+			}
 		} else {
-			successCount++
+			result.SuccessCount++
+			log.Printf("✅ Successfully generated client for %s", folderName)
 		}
 	}
 
-	return successCount, nil
+	return result, nil
+}
+
+// logProcessingResult logs a summary of the processing results
+func logProcessingResult(result *ProcessingResult) {
+	log.Printf("=====================================")
+	log.Printf("SDK Generation Summary")
+	log.Printf("=====================================")
+	log.Printf("Total specs:    %d", result.TotalSpecs)
+	log.Printf("Successful:     %d", result.SuccessCount)
+	log.Printf("Failed:         %d", len(result.FailedSpecs))
+
+	if len(result.FailedSpecs) > 0 {
+		log.Printf("-------------------------------------")
+		log.Printf("Failed specs:")
+		for _, failure := range result.FailedSpecs {
+			log.Printf("  - %s: %v", failure.ServiceName, failure.Error)
+		}
+	}
+	log.Printf("=====================================")
 }
 
 // generateClientForSpec generates a client for a single OpenAPI spec.
@@ -121,7 +190,7 @@ func generateClientForSpec(specPath, serviceName, folderName, outputDir string) 
 
 	// Apply post-processors to the generated client
 	log.Printf("Applying post-processors for %s...", folderName)
-	if err := ApplyPostProcessors(clientPath, folderName); err != nil {
+	if err := ApplyPostProcessors(clientPath, folderName, specPath); err != nil {
 		return fmt.Errorf("failed to apply post-processors for %s: %w", folderName, err)
 	}
 
@@ -138,27 +207,73 @@ func runOgenGenerator(serviceName, specPath, outputDir string) error {
 		return fmt.Errorf("failed to install ogen CLI: %w", err)
 	}
 
-	// Step 2: Run ogen to generate the client
+	// Step 2: Get absolute path to ogen config
+	ogenConfigPath := paths.GetOgenConfigPath()
+	if err := paths.EnsurePathExists(ogenConfigPath); err != nil {
+		return fmt.Errorf("ogen config not found: %w", err)
+	}
+
+	// Step 3: Run ogen to generate the client
 	cmd := exec.Command("ogen",
 		"--target", outputDir,
 		"--package", serviceName,
 		"--clean",
-		"--config", "ogen.yml",
+		"--config", ogenConfigPath,
 		specPath)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
 
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("failed to run ogen for %s: %w", serviceName, err)
+	// Capture output for better error messages
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("ogen failed for %s: %w\nOutput: %s", serviceName, err, string(output))
+	}
+
+	// Log ogen output
+	if len(output) > 0 {
+		log.Printf("ogen output for %s:\n%s", serviceName, string(output))
 	}
 
 	return nil
 }
 
-// installOgenCLI ensures the ogen CLI tool is installed.
+// installOgenCLI ensures the ogen CLI tool is installed with the correct version.
+// It checks if ogen is already installed and verifies the version before installing.
 func installOgenCLI() error {
-	cmd := exec.Command("go", "install", "github.com/ogen-go/ogen/cmd/ogen@latest")
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
+	// Check if ogen is already installed with the correct version
+	if isOgenInstalled() {
+		log.Printf("ogen CLI %s already installed, skipping installation", OgenVersion)
+		return nil
+	}
+
+	log.Printf("Installing ogen CLI %s...", OgenVersion)
+
+	// Install specific version (not @latest for deterministic builds)
+	cmd := exec.Command("go", "install", fmt.Sprintf("%s@%s", OgenPackage, OgenVersion))
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("failed to install ogen: %w\nOutput: %s", err, string(output))
+	}
+
+	// Verify installation succeeded
+	if !isOgenInstalled() {
+		return fmt.Errorf("ogen installation verification failed")
+	}
+
+	log.Printf("ogen CLI %s installed successfully", OgenVersion)
+	return nil
+}
+
+// isOgenInstalled checks if ogen is available in PATH with the correct version
+func isOgenInstalled() bool {
+	cmd := exec.Command("ogen", "--version")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return false
+	}
+
+	// Parse version from output
+	// Expected format: "ogen version v1.14.0" or similar
+	versionOutput := strings.TrimSpace(string(output))
+
+	// Check if the output contains our expected version
+	return strings.Contains(versionOutput, OgenVersion)
 }

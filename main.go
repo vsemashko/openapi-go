@@ -20,5 +20,5 @@ func main() {
 		log.Fatalf("Error processing OpenAPI specs: %v", err)
 	}
 
-	log.Println("Client generation completed successfully!")
+	log.Println("✅ Client generation completed successfully!")
 }
