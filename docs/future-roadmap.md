@@ -18,11 +18,29 @@ This document outlines the planned enhancements and future direction for the Ope
 
 ### 1. OpenAPI 3.1 Support ⭐ **HIGH PRIORITY**
 
-**Status**: Planned
+**Status**: ❌ **BLOCKED** - Research Complete (2025-11-22)
 
 **Objective**: Add full support for OpenAPI 3.1.x specifications.
 
-**Key Features**:
+**Blocker Identified**:
+The ogen code generator (v1.14.0 current, v1.16.0 latest) does **NOT support OpenAPI 3.1** specifications. Both versions fail to parse 3.1 syntax due to breaking changes:
+- `nullable: true` → `type: ["string", "null"]` (type arrays not supported)
+- `exclusiveMinimum: true` → `exclusiveMinimum: 0` (numeric values not supported)
+- No roadmap or tracking issue found for 3.1 support in ogen
+
+**Research Report**: See [OpenAPI 3.1 Research Report](./openapi-3.1-research-report.md) for full analysis.
+
+**Current Action**: **Monitor & Wait**
+- Monitor ogen releases monthly: https://github.com/ogen-go/ogen/releases
+- Continue with other roadmap items (Enhanced Error Handling, Enhanced Metrics)
+- Revisit when ogen adds 3.1 support
+
+**Alternative Options** (if ogen never supports 3.1):
+1. **Spec Downgrader**: Build 3.1 → 3.0 converter (2-3 weeks effort)
+2. **Multi-Generator**: Add alternative generator with 3.1 support (4-6 weeks, but no viable generator exists yet)
+3. **Contribute to ogen**: Add 3.1 support upstream (2-3 months effort)
+
+**Key Features** (when unblocked):
 - JSON Schema 2020-12 support
 - Webhook support
 - Improved discriminator handling
@@ -30,43 +48,19 @@ This document outlines the planned enhancements and future direction for the Ope
 - `$ref` siblings support
 - Enhanced anyOf/oneOf/allOf handling
 
-**Implementation Plan**:
-
-#### Phase 1: Research & Planning (2 weeks)
-- Analyze OpenAPI 3.1 specification differences
-- Review ogen library OpenAPI 3.1 support status
-- Identify breaking changes and migration paths
-- Create comprehensive test suite for 3.1 features
-
-#### Phase 2: Core Implementation (4 weeks)
-- Update spec parsing to handle 3.1 format
-- Implement JSON Schema 2020-12 features
-- Add webhook support to generator
-- Enhanced discriminator handling
-- Update validation logic
-
-#### Phase 3: Testing & Migration (2 weeks)
-- Comprehensive test coverage for 3.1 features
-- Migration guide for 3.0 → 3.1
-- Backward compatibility layer
-- Performance benchmarking
-
-**Deliverables**:
-- OpenAPI 3.1 specification support
-- Backward-compatible with 3.0 specs
-- Migration documentation
-- Updated test suite
-- Performance benchmarks
+**Timeline**: Unknown - depends on ogen library
 
 **Dependencies**:
-- ogen library OpenAPI 3.1 support (monitoring: https://github.com/ogen-go/ogen/issues)
-- May require forking/contributing to ogen if needed
+- ❌ **BLOCKER**: ogen library OpenAPI 3.1 support
+- Monitoring: https://github.com/ogen-go/ogen/issues
+
+**Next Review**: 2026-01-01 (monthly check)
 
 ---
 
 ### 2. Enhanced Validation & Linting
 
-**Status**: Planned
+**Status**: ✅ **COMPLETED** - v2.1.0 (2025-11-22)
 
 **Objective**: Add built-in spec validation and linting before generation.
 
@@ -110,7 +104,7 @@ type ValidatorConfig struct {
 
 ### 3. Incremental Generation
 
-**Status**: Planned
+**Status**: ✅ **COMPLETED** - v2.2.0 (2025-11-22)
 
 **Objective**: Support incremental generation to regenerate only changed endpoints.
 
