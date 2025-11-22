@@ -7,10 +7,12 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"gitlab.stashaway.com/vladimir.semashko/openapi-go/internal/cache"
 	"gitlab.stashaway.com/vladimir.semashko/openapi-go/internal/config"
 	"gitlab.stashaway.com/vladimir.semashko/openapi-go/internal/generator"
+	"gitlab.stashaway.com/vladimir.semashko/openapi-go/internal/metrics"
 	"gitlab.stashaway.com/vladimir.semashko/openapi-go/internal/paths"
 	"gitlab.stashaway.com/vladimir.semashko/openapi-go/internal/worker"
 )
@@ -53,6 +55,27 @@ func ProcessOpenAPISpecs(ctx context.Context, cfg config.Config, optionalLogger 
 		_ = optionalLogger[0]
 		// Future: Use structured logger throughout
 	}
+
+	// Initialize metrics collector
+	metricsCollector := metrics.NewCollector()
+	defer func() {
+		// Finalize and export metrics
+		metricsCollector.Finalize()
+
+		// Export to file
+		metricsPath := filepath.Join(cfg.OutputDir, ".openapi-metrics.json")
+		if err := metricsCollector.Export(metricsPath); err != nil {
+			log.Printf("Warning: Failed to export metrics: %v", err)
+		} else {
+			log.Printf("Metrics exported to: %s", metricsPath)
+		}
+
+		// Log summary
+		log.Printf("%s", metricsCollector.Summary())
+		log.Printf("Success rate: %.1f%%", metricsCollector.SuccessRate())
+		log.Printf("Cache hit rate: %.1f%%", metricsCollector.CacheHitRate())
+	}()
+
 	// Setup the client output directory
 	clientOutputDir := filepath.Join(cfg.OutputDir, "clients")
 	if err := os.MkdirAll(clientOutputDir, os.ModePerm); err != nil {
@@ -84,7 +107,7 @@ func ProcessOpenAPISpecs(ctx context.Context, cfg config.Config, optionalLogger 
 	}
 
 	// Generate clients in parallel
-	result, err := generateClients(ctx, specs, cfg.OutputDir, cfg.ContinueOnError, cfg.WorkerCount, specCache)
+	result, err := generateClients(ctx, specs, cfg.OutputDir, cfg.ContinueOnError, cfg.WorkerCount, specCache, metricsCollector)
 	if err != nil {
 		return err
 	}
@@ -159,7 +182,7 @@ func findOpenAPISpecs(specsDir string, targetServices string, specFilePatterns [
 }
 
 // generateClients generates clients for all found OpenAPI specs using parallel processing.
-func generateClients(ctx context.Context, specs []string, outputDir string, continueOnError bool, workerCount int, specCache *cache.Cache) (*ProcessingResult, error) {
+func generateClients(ctx context.Context, specs []string, outputDir string, continueOnError bool, workerCount int, specCache *cache.Cache, metricsCollector *metrics.Collector) (*ProcessingResult, error) {
 	result := &ProcessingResult{
 		TotalSpecs:   len(specs),
 		SuccessCount: 0,
@@ -168,7 +191,7 @@ func generateClients(ctx context.Context, specs []string, outputDir string, cont
 
 	// If only one spec or worker count is 1, process sequentially
 	if len(specs) == 1 || workerCount == 1 {
-		return generateClientsSequential(ctx, specs, outputDir, continueOnError, specCache)
+		return generateClientsSequential(ctx, specs, outputDir, continueOnError, specCache, metricsCollector)
 	}
 
 	log.Printf("Processing %d specs with %d parallel workers", len(specs), workerCount)
@@ -191,6 +214,9 @@ func generateClients(ctx context.Context, specs []string, outputDir string, cont
 		task := worker.Task{
 			ID: serviceName,
 			Execute: func(taskCtx context.Context) error {
+				// Start timing for metrics
+				startTime := time.Now()
+
 				// Check cache if available
 				if specCache != nil {
 					valid, err := specCache.IsValid(currentSpecPath, defaultGenerator.Version())
@@ -198,6 +224,16 @@ func generateClients(ctx context.Context, specs []string, outputDir string, cont
 						log.Printf("Warning: Cache check failed for %s: %v", serviceName, err)
 					} else if valid {
 						log.Printf("⚡ Using cached client for %s (spec unchanged)", folderName)
+
+						// Record cached metric
+						metricsCollector.RecordSpec(metrics.SpecMetric{
+							SpecPath:    currentSpecPath,
+							ServiceName: serviceName,
+							Success:     true,
+							Cached:      true,
+							DurationMs:  time.Since(startTime).Milliseconds(),
+							GeneratedAt: time.Now(),
+						})
 						return nil
 					}
 				}
@@ -206,9 +242,32 @@ func generateClients(ctx context.Context, specs []string, outputDir string, cont
 				clientPath := filepath.Join(outputDir, "clients", folderName)
 
 				// Generate client
-				if err := generateClientForSpec(taskCtx, currentSpecPath, serviceName, folderName, outputDir); err != nil {
-					return err
+				genErr := generateClientForSpec(taskCtx, currentSpecPath, serviceName, folderName, outputDir)
+				duration := time.Since(startTime).Milliseconds()
+
+				if genErr != nil {
+					// Record failed metric
+					metricsCollector.RecordSpec(metrics.SpecMetric{
+						SpecPath:    currentSpecPath,
+						ServiceName: serviceName,
+						Success:     false,
+						Cached:      false,
+						DurationMs:  duration,
+						Error:       genErr.Error(),
+						GeneratedAt: time.Now(),
+					})
+					return genErr
 				}
+
+				// Record successful metric
+				metricsCollector.RecordSpec(metrics.SpecMetric{
+					SpecPath:    currentSpecPath,
+					ServiceName: serviceName,
+					Success:     true,
+					Cached:      false,
+					DurationMs:  duration,
+					GeneratedAt: time.Now(),
+				})
 
 				// Update cache on success
 				if specCache != nil {
@@ -272,7 +331,7 @@ func generateClients(ctx context.Context, specs []string, outputDir string, cont
 }
 
 // generateClientsSequential generates clients sequentially (fallback for single spec or single worker).
-func generateClientsSequential(ctx context.Context, specs []string, outputDir string, continueOnError bool, specCache *cache.Cache) (*ProcessingResult, error) {
+func generateClientsSequential(ctx context.Context, specs []string, outputDir string, continueOnError bool, specCache *cache.Cache, metricsCollector *metrics.Collector) (*ProcessingResult, error) {
 	result := &ProcessingResult{
 		TotalSpecs:   len(specs),
 		SuccessCount: 0,
@@ -292,6 +351,9 @@ func generateClientsSequential(ctx context.Context, specs []string, outputDir st
 		folderName := serviceName + "sdk"
 		clientPath := filepath.Join(outputDir, "clients", folderName)
 
+		// Start timing for metrics
+		startTime := time.Now()
+
 		// Check cache if available
 		if specCache != nil {
 			valid, err := specCache.IsValid(specPath, defaultGenerator.Version())
@@ -300,6 +362,16 @@ func generateClientsSequential(ctx context.Context, specs []string, outputDir st
 			} else if valid {
 				log.Printf("⚡ Using cached client for %s (spec unchanged)", folderName)
 				result.SuccessCount++
+
+				// Record cached metric
+				metricsCollector.RecordSpec(metrics.SpecMetric{
+					SpecPath:    specPath,
+					ServiceName: serviceName,
+					Success:     true,
+					Cached:      true,
+					DurationMs:  time.Since(startTime).Milliseconds(),
+					GeneratedAt: time.Now(),
+				})
 				continue
 			}
 		}
@@ -307,6 +379,8 @@ func generateClientsSequential(ctx context.Context, specs []string, outputDir st
 		log.Printf("Processing service: %s (spec: %s)", serviceName, specPath)
 
 		err := generateClientForSpec(ctx, specPath, serviceName, folderName, outputDir)
+		duration := time.Since(startTime).Milliseconds()
+
 		if err != nil {
 			failure := SpecFailure{
 				SpecPath:    specPath,
@@ -317,6 +391,17 @@ func generateClientsSequential(ctx context.Context, specs []string, outputDir st
 
 			log.Printf("❌ Failed to generate client for %s: %v", folderName, err)
 
+			// Record failed metric
+			metricsCollector.RecordSpec(metrics.SpecMetric{
+				SpecPath:    specPath,
+				ServiceName: serviceName,
+				Success:     false,
+				Cached:      false,
+				DurationMs:  duration,
+				Error:       err.Error(),
+				GeneratedAt: time.Now(),
+			})
+
 			// Fail fast unless continue-on-error is enabled
 			if !continueOnError {
 				return result, fmt.Errorf("generation failed for %s: %w", serviceName, err)
@@ -324,6 +409,16 @@ func generateClientsSequential(ctx context.Context, specs []string, outputDir st
 		} else {
 			result.SuccessCount++
 			log.Printf("✅ Successfully generated client for %s", folderName)
+
+			// Record successful metric
+			metricsCollector.RecordSpec(metrics.SpecMetric{
+				SpecPath:    specPath,
+				ServiceName: serviceName,
+				Success:     true,
+				Cached:      false,
+				DurationMs:  duration,
+				GeneratedAt: time.Now(),
+			})
 
 			// Update cache on success
 			if specCache != nil {

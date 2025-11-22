@@ -26,3 +26,6 @@ coverage.html
 
 # Cache directory
 .openapi-cache/
+
+# Metrics export
+.openapi-metrics.json

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"gitlab.stashaway.com/vladimir.semashko/openapi-go/internal/config"
+	"gitlab.stashaway.com/vladimir.semashko/openapi-go/internal/metrics"
 )
 
 func TestFindOpenAPISpecs(t *testing.T) {
@@ -342,7 +343,10 @@ func TestGenerateClients(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 			defer cancel()
 
-			result, err := generateClients(ctx, specs, outputDir, tt.continueOnError, 4, nil)
+			// Create metrics collector for test
+		metricsCollector := metrics.NewCollector()
+
+		result, err := generateClients(ctx, specs, outputDir, tt.continueOnError, 4, nil, metricsCollector)
 
 			// Check error expectations
 			if (err != nil) != tt.wantErr {
